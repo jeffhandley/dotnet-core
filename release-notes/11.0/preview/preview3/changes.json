@@ -1,0 +1,337 @@
+{
+  "release_version": "11.0.0-preview.3",
+  "release_date": "",
+  "changes": [
+    {
+      "id": "runtime@124644a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Add JsonNamingPolicy.PascalCase and JsonKnownNamingPolicy.PascalCase",
+      "url": "https://github.com/dotnet/runtime/pull/124644",
+      "commit": "dotnet@0000001",
+      "is_security": false,
+      "local_repo_commit": "runtime@124644a"
+    },
+    {
+      "id": "runtime@124645a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Add JsonNamingPolicyAttribute for member/type-level naming policy override",
+      "url": "https://github.com/dotnet/runtime/pull/124645",
+      "commit": "dotnet@0000002",
+      "is_security": false,
+      "local_repo_commit": "runtime@124645a"
+    },
+    {
+      "id": "runtime@124646a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Support type-level [JsonIgnore(Condition = ...)] on classes and interfaces",
+      "url": "https://github.com/dotnet/runtime/pull/124646",
+      "commit": "dotnet@0000003",
+      "is_security": false,
+      "local_repo_commit": "runtime@124646a"
+    },
+    {
+      "id": "runtime@122950a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Support byref (in/ref/out) constructor parameters in System.Text.Json",
+      "url": "https://github.com/dotnet/runtime/pull/122950",
+      "commit": "dotnet@0000004",
+      "is_security": false,
+      "local_repo_commit": "runtime@122950a"
+    },
+    {
+      "id": "runtime@125512a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Enable RandomAccess.Read/Write for non-seekable files (pipes, sockets)",
+      "url": "https://github.com/dotnet/runtime/pull/125512",
+      "commit": "dotnet@0000005",
+      "is_security": false,
+      "local_repo_commit": "runtime@125512a"
+    },
+    {
+      "id": "runtime@125220a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Add SafeFileHandle.CreateAnonymousPipe() with per-end async support",
+      "url": "https://github.com/dotnet/runtime/pull/125220",
+      "commit": "dotnet@0000006",
+      "is_security": false,
+      "local_repo_commit": "runtime@125220a"
+    },
+    {
+      "id": "runtime@126076a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Allow null arguments in ProcessStartInfo(string, string?) and Process.Start(string, string?)",
+      "url": "https://github.com/dotnet/runtime/pull/126076",
+      "commit": "dotnet@0000007",
+      "is_security": false,
+      "local_repo_commit": "runtime@126076a"
+    },
+    {
+      "id": "runtime@125881a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Include declaring type name in assembly load handler tracing events",
+      "url": "https://github.com/dotnet/runtime/pull/125881",
+      "commit": "dotnet@0000008",
+      "is_security": false,
+      "local_repo_commit": "runtime@125881a"
+    },
+    {
+      "id": "runtime@125416a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Enable GC regions on macOS for server GC",
+      "url": "https://github.com/dotnet/runtime/pull/125416",
+      "commit": "dotnet@0000009",
+      "is_security": false,
+      "local_repo_commit": "runtime@125416a"
+    },
+    {
+      "id": "runtime@125615a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Runtime-async: skip saving unmutated locals on suspension",
+      "url": "https://github.com/dotnet/runtime/pull/125615",
+      "commit": "dotnet@0000010",
+      "is_security": false,
+      "local_repo_commit": "runtime@125615a"
+    },
+    {
+      "id": "runtime@125556a",
+      "repo": "runtime",
+      "product": "dotnet-runtime",
+      "title": "Runtime-async: continuation reuse optimization",
+      "url": "https://github.com/dotnet/runtime/pull/125556",
+      "commit": "dotnet@0000010",
+      "is_security": false,
+      "local_repo_commit": "runtime@125556a"
+    },
+    {
+      "id": "aspnetcore@64964a",
+      "repo": "aspnetcore",
+      "product": "dotnet-aspnetcore",
+      "title": "Blazor Virtualize: support variable-height items with walking average estimation",
+      "url": "https://github.com/dotnet/aspnetcore/pull/64964",
+      "commit": "dotnet@0000011",
+      "is_security": false,
+      "local_repo_commit": "aspnetcore@64964a"
+    },
+    {
+      "id": "efcore@37847a",
+      "repo": "efcore",
+      "product": "dotnet-efcore",
+      "title": "Add ChangeTracker.GetEntriesForState() to query tracked entities by EntityState",
+      "url": "https://github.com/dotnet/efcore/pull/37847",
+      "commit": "dotnet@0000012",
+      "is_security": false,
+      "local_repo_commit": "efcore@37847a"
+    },
+    {
+      "id": "efcore@37891a",
+      "repo": "efcore",
+      "product": "dotnet-efcore",
+      "title": "Add RemoveExtension, WithoutExtension, and RemoveDbContext for provider swapping in tests",
+      "url": "https://github.com/dotnet/efcore/pull/37891",
+      "commit": "dotnet@0000013",
+      "is_security": false,
+      "local_repo_commit": "efcore@37891a"
+    }
+  ],
+  "commits": {
+    "dotnet@0000001": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000001",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000001.diff"
+    },
+    "dotnet@0000002": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000002",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000002.diff"
+    },
+    "dotnet@0000003": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000003",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000003.diff"
+    },
+    "dotnet@0000004": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000004",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000004.diff"
+    },
+    "dotnet@0000005": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000005",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000005.diff"
+    },
+    "dotnet@0000006": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000006",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000006.diff"
+    },
+    "dotnet@0000007": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000007",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000007.diff"
+    },
+    "dotnet@0000008": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000008",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000008.diff"
+    },
+    "dotnet@0000009": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000009",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000009.diff"
+    },
+    "dotnet@0000010": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000010",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000010.diff"
+    },
+    "dotnet@0000011": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000011",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000011.diff"
+    },
+    "dotnet@0000012": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000012",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000012.diff"
+    },
+    "dotnet@0000013": {
+      "repo": "dotnet",
+      "branch": "release/11.0.1xx-preview3",
+      "hash": "0000000000000000000000000000000000000013",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/dotnet/commit/0000000000000000000000000000000000000013.diff"
+    },
+    "runtime@124644a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000124644000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000124644000.diff"
+    },
+    "runtime@124645a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000124645000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000124645000.diff"
+    },
+    "runtime@124646a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000124646000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000124646000.diff"
+    },
+    "runtime@122950a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000122950000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000122950000.diff"
+    },
+    "runtime@125512a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000125512000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000125512000.diff"
+    },
+    "runtime@125220a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000125220000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000125220000.diff"
+    },
+    "runtime@126076a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000126076000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000126076000.diff"
+    },
+    "runtime@125881a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000125881000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000125881000.diff"
+    },
+    "runtime@125416a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000125416000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000125416000.diff"
+    },
+    "runtime@125615a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000125615000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000125615000.diff"
+    },
+    "runtime@125556a": {
+      "repo": "runtime",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000125556000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/runtime/commit/0000000000000000000000000000000125556000.diff"
+    },
+    "aspnetcore@64964a": {
+      "repo": "aspnetcore",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000064964000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/aspnetcore/commit/0000000000000000000000000000000064964000.diff"
+    },
+    "efcore@37847a": {
+      "repo": "efcore",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000037847000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/efcore/commit/0000000000000000000000000000000037847000.diff"
+    },
+    "efcore@37891a": {
+      "repo": "efcore",
+      "branch": "main",
+      "hash": "0000000000000000000000000000000037891000",
+      "org": "dotnet",
+      "url": "https://github.com/dotnet/efcore/commit/0000000000000000000000000000000037891000.diff"
+    }
+  }
+}
