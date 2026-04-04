@@ -10,6 +10,16 @@ permissions:
 runs-on: ubuntu-latest
 timeout-minutes: 120
 
+tools:
+  github:
+    min-integrity: approved
+
+network:
+  allowed:
+    - defaults
+    - github
+    - dotnet
+
 checkout:
   fetch: ["*"]
   fetch-depth: 0
@@ -130,6 +140,9 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
 6. DO NOT edit or alter any of the files produced by the `api-diff` skill while preparing or creating the pull request.
 7. Keep every automation-created API diff pull request as a **draft**. Do not request reviewers and do not mark any PR ready for review; leave both actions to a human.
 8. This worker handles **exactly one** comparison per run.
+9. Always write a concise markdown run report describing the resolved comparison, what action was taken, and why.
+10. Persist that report with a shell command that appends to `summary_file="${GITHUB_STEP_SUMMARY:-/tmp/gh-aw/agent-step-summary.md}"` so the summary still appears even if the GitHub-hosted variable is unavailable inside the agent sandbox.
+11. If generation is blocked by missing outbound access to required package feeds or download hosts, say that plainly in the summary and stop without attempting a pull request.
 
 ## Input behavior
 
@@ -160,6 +173,15 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
 9. If no matching PR exists and this was an explicit run, it is acceptable to regenerate that comparison even when the corresponding files already exist on `main`; only create a PR if the regenerated content actually differs.
 10. If there are no file changes after generation, invoke `noop` and stop.
 11. Otherwise create a new **draft** PR for that comparison.
+
+## Step summary report
+
+Before finishing, append a concise markdown report to `summary_file="${GITHUB_STEP_SUMMARY:-/tmp/gh-aw/agent-step-summary.md}"` that includes:
+
+- the resolved previous/current comparison for this run
+- whether the run used explicit inputs or inferred the next milestone
+- whether it created a PR, refreshed an existing draft PR, skipped a non-draft PR, or no-op'd
+- whether there were no file changes, the diff already existed on `main`, or generation was blocked by network/package access
 
 ## Pull request requirements
 

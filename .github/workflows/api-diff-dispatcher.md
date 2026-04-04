@@ -10,6 +10,10 @@ permissions:
 runs-on: ubuntu-latest
 timeout-minutes: 30
 
+tools:
+  github:
+    min-integrity: approved
+
 concurrency:
   group: api-diff-dispatcher
   cancel-in-progress: true
@@ -85,8 +89,9 @@ Use the generated `api_diff` workflow-dispatch tool to fan out `api-diff` worker
 2. Use the generated `api_diff` tool for worker dispatches and `noop` only when there is truly nothing to dispatch.
 3. Avoid duplicate dispatches for the same previous/current pair within a single dispatcher run.
 4. Treat any open non-draft API diff PR as human-owned and do not dispatch refreshes for that same comparison.
-5. Always write a concise markdown report to `$GITHUB_STEP_SUMMARY` describing what you found, which worker runs you dispatched, which PRs you intentionally skipped, and why.
-6. If you invoke `noop`, include the same explanation in `$GITHUB_STEP_SUMMARY` as well.
+5. Always write a concise markdown report describing what you found, which worker runs you dispatched, which PRs you intentionally skipped, and why.
+6. Persist that report with a shell command that appends to `summary_file="${GITHUB_STEP_SUMMARY:-/tmp/gh-aw/agent-step-summary.md}"` so the summary still appears even if the GitHub-hosted variable is unavailable inside the agent sandbox.
+7. If you invoke `noop`, include the same explanation in that same summary report as well.
 
 ## Schedule and manual behavior
 
@@ -119,7 +124,7 @@ Use the generated `api_diff` workflow-dispatch tool to fan out `api-diff` worker
 
 ## Step summary report
 
-Before finishing, append a markdown report to `$GITHUB_STEP_SUMMARY` that includes:
+Before finishing, append a markdown report to `summary_file="${GITHUB_STEP_SUMMARY:-/tmp/gh-aw/agent-step-summary.md}"` that includes:
 
 - the open draft PRs that were recognized and whether each one was dispatched or skipped
 - the open non-draft PRs that were intentionally ignored
