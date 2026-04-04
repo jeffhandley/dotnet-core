@@ -40,9 +40,9 @@ Param (
     ,
     [Parameter(Mandatory = $false)]
     [AllowEmptyString()]
-    [ValidatePattern("^((preview|rc)\.\d+)?$")]
+    [ValidatePattern("^((preview|rc)\.\d+|ga)?$")]
     [string]
-    $PreviousPrereleaseLabel # "preview.7", "rc.1", etc. Omit for GA.
+    $PreviousPrereleaseLabel # "preview.7", "rc.1", "ga", or omit for GA.
     ,
     [Parameter(Mandatory = $false)]
     [ValidatePattern("^(\d+\.\d+)?$")]
@@ -51,9 +51,9 @@ Param (
     ,
     [Parameter(Mandatory = $false)]
     [AllowEmptyString()]
-    [ValidatePattern("^((preview|rc)\.\d+)?$")]
+    [ValidatePattern("^((preview|rc)\.\d+|ga)?$")]
     [string]
-    $CurrentPrereleaseLabel # "preview.7", "rc.1", etc. Omit for GA.
+    $CurrentPrereleaseLabel # "preview.7", "rc.1", "ga", or omit for GA.
     ,
     [Parameter(Mandatory = $false)]
     [string]
@@ -104,6 +104,19 @@ Param (
     [Parameter(Mandatory = $false)]
     [string]
     $CurrentVersion = ""
+    ,
+    [Parameter(Mandatory = $false)]
+    [string]
+    $NuGetFeeds = "" # Comma-separated list of feed names or URLs to try in order (e.g. "dotnet-public,dotnet11")
+    ,
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("text", "json")]
+    [string]
+    $OutputFormat = "text"
+    ,
+    [Parameter(Mandatory = $false)]
+    [string]
+    $OutputFile = "" # Path to write JSON output (used with -OutputFormat json)
 )
 
 #######################
@@ -341,6 +354,17 @@ Function Write-Color {
     Else {
         $input | ForEach-Object { Write-Host $_ -ForegroundColor $newColor }
     }
+}
+
+Function ResolveFeedUrl {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $feedName
+    )
+    $feedName = $feedName.Trim()
+    if ($feedName -match '^https?://') { return $feedName }
+    return "https://pkgs.dev.azure.com/dnceng/public/_packaging/$feedName/nuget/v3/index.json"
 }
 
 Function VerifyPathOrExit {
@@ -957,6 +981,27 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
     Write-Error "This script requires PowerShell 7.0 or later.  See  https://aka.ms/PSWindows for instructions." -ErrorAction Stop
 }
 
+## Normalize "ga" prerelease labels to empty (GA is represented by omitting the label)
+if ($PreviousPrereleaseLabel -eq "ga") { $PreviousPrereleaseLabel = "" }
+if ($CurrentPrereleaseLabel -eq "ga") { $CurrentPrereleaseLabel = "" }
+
+## Set up error handling for JSON output — write failure metadata before exiting
+if ($OutputFormat -eq "json" -and -not [System.String]::IsNullOrWhiteSpace($OutputFile)) {
+    $outputDir = Split-Path -Parent $OutputFile
+    if (-not [string]::IsNullOrWhiteSpace($outputDir) -and -not (Test-Path $outputDir)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+    }
+
+    trap {
+        $errorResult = [ordered]@{ status = "failed"; reason = $_.Exception.Message }
+        Set-Content -Path $OutputFile -Value ($errorResult | ConvertTo-Json -Depth 5)
+        Write-Color red "JSON error output written to: $OutputFile"
+        break
+    }
+}
+
+$OriginalIsGAToGA = $false
+
 ## Resolve CoreRepo and scriptDir early (needed for api-diff scanning and exclude file paths)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
@@ -1021,15 +1066,20 @@ If ([System.String]::IsNullOrWhiteSpace($CurrentMajorMinor) -and [System.String]
     }
 }
 
-## Default CurrentNuGetFeed and PreviousNuGetFeed to the dotnet-public feed if not provided
+## Resolve NuGetFeeds and default feed URLs
+$feedList = @()
+if (-not [System.String]::IsNullOrWhiteSpace($NuGetFeeds)) {
+    $feedList = ($NuGetFeeds -split ',') | ForEach-Object { ResolveFeedUrl $_ }
+}
+
 If ([System.String]::IsNullOrWhiteSpace($CurrentNuGetFeed)) {
-    $CurrentNuGetFeed = $DotNetPublicFeedUrl
-    Write-Color cyan "Using default current feed: $CurrentNuGetFeed"
+    $CurrentNuGetFeed = if ($feedList.Count -gt 0) { $feedList[0] } else { $DotNetPublicFeedUrl }
+    Write-Color cyan "Using current feed: $CurrentNuGetFeed"
 }
 
 If ([System.String]::IsNullOrWhiteSpace($PreviousNuGetFeed)) {
-    $PreviousNuGetFeed = $DotNetPublicFeedUrl
-    Write-Color cyan "Using default previous feed: $PreviousNuGetFeed"
+    $PreviousNuGetFeed = if ($feedList.Count -gt 0) { $feedList[0] } else { $DotNetPublicFeedUrl }
+    Write-Color cyan "Using previous feed: $PreviousNuGetFeed"
 }
 
 ## Discover version info from feeds if not provided
@@ -1078,8 +1128,44 @@ If ($PreviousMajorMinor -eq $CurrentMajorMinor -and $PreviousPrereleaseLabel -eq
     Write-Error "Previous and current versions are the same ($previousDesc). Ensure -PreviousNuGetFeed and -CurrentNuGetFeed point to different versions, or specify version parameters explicitly." -ErrorAction Stop
 }
 
-# True when comparing GA releases
+# True when comparing GA releases across major versions
 $IsComparingReleases = ($PreviousMajorMinor -Ne $CurrentMajorMinor) -And ($PreviousReleaseKind -Eq "ga") -And ($CurrentReleaseKind -eq "ga")
+$OriginalIsGAToGA = $IsComparingReleases
+
+# For cross-major GA-to-GA comparisons, resolve to the latest available version if GA is not yet published
+if ($IsComparingReleases) {
+    Write-Color cyan "Cross-major GA comparison ($PreviousMajorMinor -> $CurrentMajorMinor). Checking if $CurrentMajorMinor GA is available..."
+    try {
+        $serviceIdx = Invoke-RestMethod -Uri $CurrentNuGetFeed
+        $fc = $serviceIdx.resources | Where-Object { $_.'@type' -match 'PackageBaseAddress' } | Select-Object -First 1
+        if ($fc) {
+            $versionsResult = Invoke-RestMethod -Uri "$($fc.'@id')microsoft.netcore.app.ref/index.json"
+            $gaPattern = "$CurrentMajorMinor.0"
+            $gaExists = $versionsResult.versions -contains $gaPattern
+
+            if (-not $gaExists) {
+                $mmVersions = @($versionsResult.versions | Where-Object { $_ -like "$CurrentMajorMinor.*" })
+                if ($mmVersions.Count -gt 0) {
+                    $latestVersion = $mmVersions[-1]
+                    $parsed = ParseVersionString $latestVersion "Current"
+                    if ($parsed.PrereleaseLabel) {
+                        Write-Color cyan "$CurrentMajorMinor GA not published yet. Using latest available: $latestVersion"
+                        $CurrentPrereleaseLabel = $parsed.PrereleaseLabel
+                        $currentParsed = ParsePrereleaseLabel $CurrentPrereleaseLabel
+                        $CurrentReleaseKind = $currentParsed.ReleaseKind
+                        $CurrentPreviewRCNumber = $currentParsed.PreviewRCNumber
+                        $IsComparingReleases = $false
+                    }
+                }
+            } else {
+                Write-Color green "$CurrentMajorMinor GA is available."
+            }
+        }
+    }
+    catch {
+        Write-Color yellow "Could not probe for GA availability: $_"
+    }
+}
 
 ## Resolve exclude file paths relative to the script's directory if they are relative paths
 If (-not [System.IO.Path]::IsPathRooted($AttributesToExcludeFilePath)) {
@@ -1165,11 +1251,90 @@ $commonParams = @{
     currentVersion = $CurrentVersion
 }
 
-ForEach ($sdk in $sdksToProcess) {
-    ProcessSdk -sdkName $sdk @commonParams
+## Run the ApiDiff with feed fallback
+$feedUsed = $CurrentNuGetFeed
+$feedsToTry = if ($feedList.Count -gt 0) { $feedList } else { @($CurrentNuGetFeed) }
+$lastFeedError = $null
+
+ForEach ($tryFeed in $feedsToTry) {
+    $lastFeedError = $null
+
+    # Update feeds in params
+    $commonParams.previousNuGetFeed = $tryFeed
+    $commonParams.currentNuGetFeed = $tryFeed
+
+    # Create fresh temp folder for each attempt
+    $retryTmpFolder = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
+    New-Item -ItemType Directory -Path $retryTmpFolder | Out-Null
+    $commonParams.tmpFolder = $retryTmpFolder
+
+    # Clean output folder for retry
+    If (Test-Path -Path $previewFolderPath) {
+        Remove-Item -Recurse -Force $previewFolderPath
+    }
+    New-Item -ItemType Directory -Path $previewFolderPath | Out-Null
+
+    try {
+        ForEach ($sdk in $sdksToProcess) {
+            ProcessSdk -sdkName $sdk @commonParams
+        }
+        $feedUsed = $tryFeed
+        break
+    }
+    catch {
+        $lastFeedError = $_
+        Write-Color yellow "Feed '$tryFeed' failed: $($_.Exception.Message)"
+        if ($tryFeed -ne $feedsToTry[-1]) {
+            Write-Color yellow "Trying next feed..."
+        }
+    }
+}
+
+if ($lastFeedError) {
+    Write-Error "All NuGet feeds exhausted. Last error: $($lastFeedError.Exception.Message)" -ErrorAction Stop
 }
 
 CreateReadme -previewFolderPath $previewFolderPath -dotNetFriendlyName $currentDotNetFriendlyName -dotNetFullName $currentDotNetFullName -sdkNames $sdksToProcess
+
+## Write JSON output if requested
+if ($OutputFormat -eq "json") {
+    # Compute branch name and PR title for metadata
+    $prevSegment = "net$($PreviousMajorMinor.Replace('.', ''))"
+    if ($PreviousPrereleaseLabel) { $prevSegment += "-$($PreviousPrereleaseLabel.Replace('.', ''))" }
+    $currSegment = "net$($CurrentMajorMinor.Replace('.', ''))"
+    if ($CurrentPrereleaseLabel) { $currSegment += "-$($CurrentPrereleaseLabel.Replace('.', ''))" }
+
+    $branchName = "api-diff/${prevSegment}_${currSegment}"
+
+    if ($OriginalIsGAToGA) {
+        $prTitle = "$previousDotNetFriendlyName -> .NET $CurrentMajorMinor GA"
+    } else {
+        $prTitle = "$previousDotNetFriendlyName -> $currentDotNetFriendlyName"
+    }
+
+    $result = [ordered]@{
+        status = "success"
+        previous = $previousDotNetFriendlyName
+        current = $currentDotNetFriendlyName
+        is_release_to_release = $OriginalIsGAToGA
+        feed_used = $feedUsed
+        branch_name = $branchName
+        pr_title = $prTitle
+    }
+
+    $json = $result | ConvertTo-Json -Depth 5
+
+    if (-not [System.String]::IsNullOrWhiteSpace($OutputFile)) {
+        $outputDir = Split-Path -Parent $OutputFile
+        if (-not [string]::IsNullOrWhiteSpace($outputDir) -and -not (Test-Path $outputDir)) {
+            New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+        }
+        Set-Content -Path $OutputFile -Value $json
+        Write-Color green "JSON output written to: $OutputFile"
+    } else {
+        Write-Output $json
+    }
+}
 
 #####################
 ### End Execution ###
