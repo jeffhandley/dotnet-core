@@ -156,6 +156,7 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
     - use `rc.N` for release candidates, such as `rc.1`
     - use `ga` for the general-availability release
 - When translating those inputs to the underlying script behavior, treat `ga` as the GA case rather than as a numbered prerelease label.
+- For the release-to-release automation comparison such as `previous ga -> current ga`, interpret the **current** side as "the latest API currently available on `dotnet-public` for that current release line", even while that release is still in preview or RC. This lets the release-to-current PR keep advancing from Preview 1 to Preview 2 to Preview 3 and so on while preserving the stable release-line title format.
 - Do not ask for build numbers or full package versions.
 
 ## Generation steps
@@ -163,16 +164,37 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
 1. Resolve exactly one target comparison for this run.
    - Use the explicit inputs when they are supplied.
    - Otherwise ask the skill to infer the next milestone comparison automatically.
-2. Invoke `@.github/skills/api-diff` to generate that comparison.
-3. On GitHub-hosted runners, make sure the ApiDiff tool is installed or updated if the first run indicates that it is missing. Prefer re-running with the equivalent of `-InstallApiDiff` rather than failing the workflow.
-4. Inspect the generated files to determine the before and after releases and confirm which `release-notes/**/api-diff/**` content changed for the target comparison.
-5. Search for an existing **open** pull request in this repository that already has the `[API Diff]` title prefix, the `automation` label, and matches the same target comparison.
-6. If the matching PR exists and is a **draft**, update its title or body as needed and use `push_to_pull_request_branch` to refresh the same branch instead of creating a second PR.
-7. If the matching PR exists and is **not** a draft, treat it as human-owned, invoke the `noop` tool with a brief explanation, and stop without changing it.
-8. If no matching PR exists and this was an inferred no-input run, check whether the corresponding API diff is already present on `main`. If it is already present, invoke `noop` and stop.
-9. If no matching PR exists and this was an explicit run, it is acceptable to regenerate that comparison even when the corresponding files already exist on `main`; only create a PR if the regenerated content actually differs.
-10. If there are no file changes after generation, invoke `noop` and stop.
-11. Otherwise create a new **draft** PR for that comparison.
+2. Choose the feed strategy before generation:
+   - For the release-to-release comparison such as `previous ga -> current ga`, stay on the default public behavior only and resolve the current side to the **latest version currently available on `dotnet-public`** for the current release line. Do **not** use any release-specific feed fallback for this case.
+   - For the next preview-to-preview comparison on a major release line, try `dotnet-public` first.
+   - Only if `dotnet-public` does not have the target preview version available yet, retry once using the release-specific feed `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json`, where `{MAJOR}` is the major version number for the current release line.
+   - Use that fallback only for the preview run that advances to the next preview milestone. Do not use it for the release-to-release run.
+   - Make that fallback concrete:
+     1. First run the comparison with the normal default behavior and no custom feed arguments.
+     2. If the result shows that the target preview is not yet available on `dotnet-public`, rerun the same comparison exactly once with `-CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"`.
+     3. Keep `-PreviousNuGetFeed` on its default public value unless the script explicitly indicates the previous side also cannot be resolved from `dotnet-public`.
+   - If you need to run the script directly rather than relying on inference, use the concrete command shape below and substitute the resolved values for this run:
+
+     ```powershell
+     .\release-notes\RunApiDiff.ps1 `
+       -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
+       -PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_ANY} `
+       -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
+       -CurrentPrereleaseLabel {CURRENT_LABEL_IF_ANY} `
+       -CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"
+     ```
+
+   - When rerunning through the local skill, explicitly tell it to rerun the same comparison with that `CurrentNuGetFeed` override rather than vaguely saying to "use the fallback feed."
+3. Invoke `@.github/skills/api-diff` to generate that comparison using the selected feed behavior.
+4. On GitHub-hosted runners, make sure the ApiDiff tool is installed or updated if the first run indicates that it is missing. Prefer re-running with the equivalent of `-InstallApiDiff` rather than failing the workflow.
+5. Inspect the generated files to determine the before and after releases and confirm which `release-notes/**/api-diff/**` content changed for the target comparison.
+6. Search for an existing **open** pull request in this repository that already has the `[API Diff]` title prefix, the `automation` label, and matches the same target comparison.
+7. If the matching PR exists and is a **draft**, update its title or body as needed and use `push_to_pull_request_branch` to refresh the same branch instead of creating a second PR.
+8. If the matching PR exists and is **not** a draft, treat it as human-owned, invoke the `noop` tool with a brief explanation, and stop without changing it.
+9. If no matching PR exists and this was an inferred no-input run, check whether the corresponding API diff is already present on `main`. If it is already present, invoke `noop` and stop.
+10. If no matching PR exists and this was an explicit run, it is acceptable to regenerate that comparison even when the corresponding files already exist on `main`; only create a PR if the regenerated content actually differs.
+11. If there are no file changes after generation, invoke `noop` and stop.
+12. Otherwise create a new **draft** PR for that comparison.
 
 ## Step summary report
 
@@ -180,6 +202,7 @@ Before finishing, append a concise markdown report to `summary_file="${GITHUB_ST
 
 - the resolved previous/current comparison for this run
 - whether the run used explicit inputs or inferred the next milestone
+- whether generation stayed on `dotnet-public` or had to fall back to `dotnet{MAJOR}` for the next preview comparison
 - whether it created a PR, refreshed an existing draft PR, skipped a non-draft PR, or no-op'd
 - whether there were no file changes, the diff already existed on `main`, or generation was blocked by network/package access
 
@@ -190,6 +213,7 @@ Maintain at most one open automation PR per target API diff comparison.
 - The safe output already enforces the `[API Diff]` prefix. Provide the remainder of the title in one of these forms:
   - `.NET 11.0 Preview 2 -> Preview 3`
   - `.NET 10.0 -> .NET 11.0`
+- Keep the release-to-release title in the stable release-line form `.NET 10.0 -> .NET 11.0` even when the underlying current-side package being compared is still the latest public preview or RC for `11.0`.
 - The PR body should briefly summarize what comparison was generated and list the affected owners or contributors in a format similar to the historical API diff PRs.
 - Restrict the patch to files matching these globs only:
   - `release-notes/**/api-diff/**/*.md`
