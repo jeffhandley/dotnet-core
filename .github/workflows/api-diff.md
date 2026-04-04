@@ -128,7 +128,7 @@ engine:
 
 # Produce one API diff PR
 
-Use the local `@.github/skills/api-diff` skill to generate exactly one API diff comparison and then create or refresh the matching pull request.
+Use the local `release-notes/RunApiDiff.ps1` script directly to generate exactly one API diff comparison and then create or refresh the matching pull request. You may consult `@.github/skills/api-diff` only as a parameter-mapping reference, but do not route the main generation step through the skill wrapper.
 
 ## Operating rules
 
@@ -137,7 +137,7 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
 3. If there are no file changes after generation, do not create a PR.
 4. Use `main` as the pull request base branch.
 5. Follow the style of `dotnet/core#10281`, `#10240`, `#10148`, `#10147`, `#10138`, and `#10063`, but standardize the PR title and keep the wording current.
-6. DO NOT edit or alter any of the files produced by the `api-diff` skill while preparing or creating the pull request.
+6. DO NOT edit or alter any of the files produced by the API diff script while preparing or creating the pull request.
 7. Keep every automation-created API diff pull request as a **draft**. Do not request reviewers and do not mark any PR ready for review; leave both actions to a human.
 8. This worker handles **exactly one** comparison per run.
 9. Always write a concise markdown run report describing the resolved comparison, what action was taken, and why.
@@ -148,7 +148,7 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
 ## Input behavior
 
 - Treat the four `workflow_dispatch` inputs as an all-or-none set:
-  - If all four inputs are empty, ask the skill to **generate the next API diff** so it infers the next milestone comparison automatically.
+  - If all four inputs are empty, run `release-notes/RunApiDiff.ps1` with no version parameters so it infers the next milestone comparison automatically.
   - If any input is provided, require all four values together and use them to target the comparison explicitly.
 - Input mapping:
   - `previous_major_minor` and `current_major_minor` are just the release line, such as `11.0` or `10.0`
@@ -165,7 +165,7 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
 
 1. Resolve exactly one target comparison for this run.
    - Use the explicit inputs when they are supplied.
-   - Otherwise ask the skill to infer the next milestone comparison automatically.
+   - Otherwise let `release-notes/RunApiDiff.ps1` infer the next milestone comparison automatically by running it with no version parameters first.
 2. Choose the feed strategy before generation:
    - For the release-to-release comparison such as `previous ga -> current ga`, stay on the default public behavior only and resolve the current side to the **latest version currently available on `dotnet-public`** for the current release line. Do **not** use any release-specific feed fallback for this case.
    - For the next preview-to-preview comparison on a major release line, try `dotnet-public` first.
@@ -175,20 +175,26 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
      1. First run the comparison with the normal default behavior and no custom feed arguments.
      2. If the result shows that the target preview is not yet available on `dotnet-public`, rerun the same comparison exactly once with `-CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"`.
      3. Keep `-PreviousNuGetFeed` on its default public value unless the script explicitly indicates the previous side also cannot be resolved from `dotnet-public`.
-   - If you need to run the script directly rather than relying on inference, use the concrete command shape below and substitute the resolved values for this run:
+   - If the initial no-argument inferred run fails specifically because the target preview is not yet on `dotnet-public`, infer the same comparison from the script output or the existing `release-notes/**/api-diff/` progression and rerun it explicitly with the same previous/current values plus the `CurrentNuGetFeed` override.
+   - Use the concrete command shapes below and substitute the resolved values for this run:
 
      ```powershell
-     .\release-notes\RunApiDiff.ps1 `
-       -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
-       -PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_ANY} `
-       -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
-       -CurrentPrereleaseLabel {CURRENT_LABEL_IF_ANY} `
-       -CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"
+     pwsh -File ./release-notes/RunApiDiff.ps1
      ```
 
-   - When rerunning through the local skill, explicitly tell it to rerun the same comparison with that `CurrentNuGetFeed` override rather than vaguely saying to "use the fallback feed."
-3. Invoke `@.github/skills/api-diff` to generate that comparison using the selected feed behavior.
-4. On GitHub-hosted runners, make sure the ApiDiff tool is installed or updated if the first run indicates that it is missing. Prefer re-running with the equivalent of `-InstallApiDiff` rather than failing the workflow.
+     ```powershell
+     pwsh -File ./release-notes/RunApiDiff.ps1 `
+       -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
+       -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
+       [-PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_NOT_GA}] `
+       [-CurrentPrereleaseLabel {CURRENT_LABEL_IF_NOT_GA}] `
+       [-CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"] `
+       [-InstallApiDiff]
+     ```
+
+   - Prefer direct script invocation over the skill wrapper even for explicit runs, because the script gives more deterministic behavior and clearer logs in GitHub Actions.
+3. Invoke `release-notes/RunApiDiff.ps1` directly to generate that comparison using the selected feed behavior.
+4. On GitHub-hosted runners, make sure the ApiDiff tool is installed or updated if the first run indicates that it is missing. Prefer re-running with `-InstallApiDiff` rather than failing the workflow.
 5. Inspect the generated files to determine the before and after releases and confirm which `release-notes/**/api-diff/**` content changed for the target comparison.
 6. Search for an existing **open** pull request in this repository that already has the `[API Diff]` title prefix, the `automation` label, and matches the same target comparison.
 7. If the matching PR exists and is a **draft**, update its title or body as needed and use `push_to_pull_request_branch` to refresh the same branch instead of creating a second PR.
