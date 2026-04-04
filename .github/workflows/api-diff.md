@@ -42,7 +42,7 @@ safe-outputs:
     fallback-as-issue: false
     preserve-branch-name: true
     allowed-files:
-      - release-notes/**/api-diff/**/*.md
+      - release-notes/**/api-diff/**.md
       - release-notes/ApiDiffAssembliesToExclude.txt
       - release-notes/ApiDiffAttributesToExclude.txt
   push-to-pull-request-branch:
@@ -52,7 +52,7 @@ safe-outputs:
     max: 1
     if-no-changes: ignore
     allowed-files:
-      - release-notes/**/api-diff/**/*.md
+      - release-notes/**/api-diff/**.md
       - release-notes/ApiDiffAssembliesToExclude.txt
       - release-notes/ApiDiffAttributesToExclude.txt
   update-pull-request:
@@ -216,7 +216,7 @@ Maintain at most one open automation PR per target API diff comparison.
 - Keep the release-to-release title in the stable release-line form `.NET 10.0 -> .NET 11.0` even when the underlying current-side package being compared is still the latest public preview or RC for `11.0`.
 - The PR body should briefly summarize what comparison was generated and list the affected owners or contributors in a format similar to the historical API diff PRs.
 - Restrict the patch to files matching these globs only:
-  - `release-notes/**/api-diff/**/*.md`
+  - `release-notes/**/api-diff/**.md`
   - `release-notes/ApiDiffAssembliesToExclude.txt`
   - `release-notes/ApiDiffAttributesToExclude.txt`
 - Always create and update these PRs as drafts with no reviewers.
