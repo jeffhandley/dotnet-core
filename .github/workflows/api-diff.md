@@ -142,7 +142,8 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
 8. This worker handles **exactly one** comparison per run.
 9. Always write a concise markdown run report describing the resolved comparison, what action was taken, and why.
 10. Persist that report with a shell command that appends to `summary_file="${GITHUB_STEP_SUMMARY:-/tmp/gh-aw/agent-step-summary.md}"` so the summary still appears even if the GitHub-hosted variable is unavailable inside the agent sandbox.
-11. If generation is blocked by missing outbound access to required package feeds or download hosts, say that plainly in the summary and stop without attempting a pull request.
+11. If generation is blocked by missing outbound access to required package feeds or download hosts, say that plainly in the summary, invoke `noop` with the same explanation, and stop without attempting a pull request.
+12. Never let a successful run finish without at least one safe output. If the run is not going to create a PR, update a PR, or push to a PR branch, it must explicitly invoke `noop` with a brief reason rather than exiting silently.
 
 ## Input behavior
 
@@ -156,6 +157,7 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
     - use `rc.N` for release candidates, such as `rc.1`
     - use `ga` for the general-availability release
 - When translating those inputs to the underlying script behavior, treat `ga` as the GA case rather than as a numbered prerelease label.
+- If a manual dispatch provides only some of the four inputs instead of all four together, invoke `noop` explaining that all four values are required for an explicit run, and stop.
 - For the release-to-release automation comparison such as `previous ga -> current ga`, interpret the **current** side as "the latest API currently available on `dotnet-public` for that current release line", even while that release is still in preview or RC. This lets the release-to-current PR keep advancing from Preview 1 to Preview 2 to Preview 3 and so on while preserving the stable release-line title format.
 - Do not ask for build numbers or full package versions.
 
@@ -190,11 +192,13 @@ Use the local `@.github/skills/api-diff` skill to generate exactly one API diff 
 5. Inspect the generated files to determine the before and after releases and confirm which `release-notes/**/api-diff/**` content changed for the target comparison.
 6. Search for an existing **open** pull request in this repository that already has the `[API Diff]` title prefix, the `automation` label, and matches the same target comparison.
 7. If the matching PR exists and is a **draft**, update its title or body as needed and use `push_to_pull_request_branch` to refresh the same branch instead of creating a second PR.
-8. If the matching PR exists and is **not** a draft, treat it as human-owned, invoke the `noop` tool with a brief explanation, and stop without changing it.
-9. If no matching PR exists and this was an inferred no-input run, check whether the corresponding API diff is already present on `main`. If it is already present, invoke `noop` and stop.
-10. If no matching PR exists and this was an explicit run, it is acceptable to regenerate that comparison even when the corresponding files already exist on `main`; only create a PR if the regenerated content actually differs.
-11. If there are no file changes after generation, invoke `noop` and stop.
-12. Otherwise create a new **draft** PR for that comparison.
+8. If the matching draft PR is already fully current and there is nothing to push or update, invoke `noop` with that explanation and stop instead of exiting silently.
+9. If the matching PR exists and is **not** a draft, treat it as human-owned, invoke the `noop` tool with a brief explanation, and stop without changing it.
+10. If no matching PR exists and this was an inferred no-input run, check whether the corresponding API diff is already present on `main`. If it is already present, invoke `noop` and stop.
+11. If no matching PR exists and this was an explicit run, it is acceptable to regenerate that comparison even when the corresponding files already exist on `main`; only create a PR if the regenerated content actually differs.
+12. If there are no file changes after generation, invoke `noop` and stop.
+13. Otherwise create a new **draft** PR for that comparison.
+14. As a final safety check, if you are about to end the run without calling `create_pull_request`, `update_pull_request`, or `push_to_pull_request_branch`, invoke `noop` first so the run always emits an intentional safe output.
 
 ## Step summary report
 
@@ -204,6 +208,7 @@ Before finishing, append a concise markdown report to `summary_file="${GITHUB_ST
 - whether the run used explicit inputs or inferred the next milestone
 - whether generation stayed on `dotnet-public` or had to fall back to `dotnet{MAJOR}` for the next preview comparison
 - whether it created a PR, refreshed an existing draft PR, skipped a non-draft PR, or no-op'd
+- the explicit `noop` reason when no PR action was taken
 - whether there were no file changes, the diff already existed on `main`, or generation was blocked by network/package access
 
 ## Pull request requirements
