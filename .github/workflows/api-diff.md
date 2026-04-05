@@ -132,6 +132,11 @@ engine:
     # We cannot use line breaks in this expression as it leads to a syntax error in the compiled workflow
     # If none of the `COPILOT_PAT_#` secrets were selected, then the default COPILOT_GITHUB_TOKEN is used
     COPILOT_GITHUB_TOKEN: ${{ case(needs.pre_activation.outputs.copilot_pat_number == '0', secrets.COPILOT_PAT_0, needs.pre_activation.outputs.copilot_pat_number == '1', secrets.COPILOT_PAT_1, needs.pre_activation.outputs.copilot_pat_number == '2', secrets.COPILOT_PAT_2, needs.pre_activation.outputs.copilot_pat_number == '3', secrets.COPILOT_PAT_3, needs.pre_activation.outputs.copilot_pat_number == '4', secrets.COPILOT_PAT_4, needs.pre_activation.outputs.copilot_pat_number == '5', secrets.COPILOT_PAT_5, needs.pre_activation.outputs.copilot_pat_number == '6', secrets.COPILOT_PAT_6, needs.pre_activation.outputs.copilot_pat_number == '7', secrets.COPILOT_PAT_7, needs.pre_activation.outputs.copilot_pat_number == '8', secrets.COPILOT_PAT_8, needs.pre_activation.outputs.copilot_pat_number == '9', secrets.COPILOT_PAT_9, secrets.COPILOT_GITHUB_TOKEN) }}
+    # Surface workflow_dispatch inputs as environment variables so the agent can read them
+    API_DIFF_PREVIOUS_MAJOR_MINOR: ${{ inputs.previous_major_minor }}
+    API_DIFF_PREVIOUS_LABEL: ${{ inputs.previous_label }}
+    API_DIFF_CURRENT_MAJOR_MINOR: ${{ inputs.current_major_minor }}
+    API_DIFF_CURRENT_LABEL: ${{ inputs.current_label }}
 ---
 
 # Produce one API diff PR
@@ -155,12 +160,17 @@ Use `release-notes/ApiDiff-CollectAssemblies.ps1` to collect reference assemblie
 
 ## Input behavior
 
-- Treat the four `workflow_dispatch` inputs as an all-or-none set:
-  - If all four inputs are empty, the script infers the next milestone comparison automatically.
-  - If any input is provided, require all four values together.
+- Read the four comparison parameters from environment variables — these are populated from the `workflow_dispatch` inputs. Run `printenv | grep API_DIFF_` in a shell to read them:
+  - `API_DIFF_PREVIOUS_MAJOR_MINOR` — the previous `major.minor` version
+  - `API_DIFF_PREVIOUS_LABEL` — the previous milestone label
+  - `API_DIFF_CURRENT_MAJOR_MINOR` — the current `major.minor` version
+  - `API_DIFF_CURRENT_LABEL` — the current milestone label
+- Treat the four values as an all-or-none set:
+  - If all four are empty, the script infers the next milestone comparison automatically.
+  - If any value is provided, require all four values together.
 - Input mapping:
-  - `previous_major_minor` and `current_major_minor` are just the release line, such as `11.0` or `10.0`
-  - `previous_label` and `current_label` identify the milestone on that line:
+  - `API_DIFF_PREVIOUS_MAJOR_MINOR` and `API_DIFF_CURRENT_MAJOR_MINOR` are just the release line, such as `11.0` or `10.0`
+  - `API_DIFF_PREVIOUS_LABEL` and `API_DIFF_CURRENT_LABEL` identify the milestone on that line:
     - use `preview.N` for previews, such as `preview.2`
     - use `rc.N` for release candidates, such as `rc.1`
     - use `ga` for the general-availability release
@@ -171,16 +181,17 @@ Use `release-notes/ApiDiff-CollectAssemblies.ps1` to collect reference assemblie
 
 **Important:** Do not manually query or interpret NuGet feed contents. The `ApiDiff-CollectAssemblies.ps1` script handles all version resolution, feed querying, and package downloading. Trust its output. Daily NuGet feeds contain many build versions (alpha, preview, rc) — do not attempt to analyze feed listings yourself.
 
-### Step 1 — Validate inputs
+### Step 1 — Read and validate inputs
 
-- If a manual dispatch provides only some of the four inputs instead of all four together, invoke `noop` explaining that all four values are required for an explicit run, and stop.
+- Run `printenv | grep API_DIFF_` to read the four input environment variables.
+- If some but not all four values are provided, invoke `noop` explaining that all four values are required for an explicit run, and stop.
 
 ### Step 2 — Collect assemblies
 
 Run `release-notes/ApiDiff-CollectAssemblies.ps1` to resolve versions, download reference packages, and produce a JSON manifest on stdout.
 
 - **When all four inputs are empty (inferred run):** run with no version parameters.
-- **When all four inputs are provided (explicit run):** map the inputs to script parameters.
+- **When all four inputs are provided (explicit run):** map the `API_DIFF_*` environment variable values to script parameters.
 - **GA inputs:** treat `ga` as the GA case — omit the prerelease label parameter.
 - **Release-to-release comparison** (`previous ga -> current ga`): run with default feeds only. Do not use the daily feed fallback for this case.
 
