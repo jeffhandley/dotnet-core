@@ -2,33 +2,15 @@
 name: API Diff
 description: Generate or refresh a single .NET API diff pull request for a specific comparison.
 
+# Security
 permissions:
   contents: read
   issues: read
   pull-requests: read
 
-runs-on: ubuntu-latest
-timeout-minutes: 120
-
 tools:
   github:
     min-integrity: approved
-
-network:
-  allowed:
-    - defaults
-    - github
-    - dotnet
-
-checkout:
-  fetch: ["*"]
-  fetch-depth: 0
-
-if: github.event_name == 'workflow_dispatch' || !github.event.repository.fork
-
-concurrency:
-  group: api-diff-${{ inputs.previous_major_minor || 'inferred' }}-${{ inputs.previous_label || 'inferred' }}-${{ inputs.current_major_minor || 'inferred' }}-${{ inputs.current_label || 'inferred' }}
-  cancel-in-progress: true
 
 safe-outputs:
   noop:
@@ -62,6 +44,30 @@ safe-outputs:
     max: 1
     footer: false
 
+# Orchestration
+if: github.event_name == 'workflow_dispatch' || !github.event.repository.fork
+
+concurrency:
+  group: api-diff-${{ inputs.previous_major_minor || 'inferred' }}-${{ inputs.previous_label || 'inferred' }}-${{ inputs.current_major_minor || 'inferred' }}-${{ inputs.current_label || 'inferred' }}
+  cancel-in-progress: true
+
+timeout-minutes: 120
+
+# Runner
+runs-on: ubuntu-latest
+
+# Network
+network:
+  allowed:
+    - defaults
+    - github
+    - dotnet
+
+checkout:
+  fetch: ["*"]
+  fetch-depth: 0
+
+# Triggers
 on:
   workflow_dispatch:
     inputs:
@@ -130,7 +136,7 @@ engine:
 
 # Produce one API diff PR
 
-Use the local `release-notes/ApiDiff-Run.ps1` script directly to generate exactly one API diff comparison and then create or refresh the matching pull request. You may consult `@.github/skills/api-diff` only as a parameter-mapping reference, but do not route the main generation step through the skill wrapper.
+Use `release-notes/ApiDiff-CollectAssemblies.ps1` to collect reference assemblies and then call the `generate_api_diff` MCP tool to generate exactly one API diff comparison. Create or refresh the matching pull request using the configured safe outputs. You may consult `@.github/skills/api-diff` as a reference for parameter mapping.
 
 ## Operating rules
 
@@ -139,7 +145,7 @@ Use the local `release-notes/ApiDiff-Run.ps1` script directly to generate exactl
 3. If there are no file changes after generation, do not create a PR.
 4. Use `main` as the pull request base branch.
 5. Follow the style of `dotnet/core#10281`, `#10240`, `#10148`, `#10147`, `#10138`, and `#10063`, but standardize the PR title and keep the wording current.
-6. DO NOT edit or alter any of the files produced by the API diff script while preparing or creating the pull request.
+6. DO NOT edit or alter any of the files produced by the `generate_api_diff` MCP tool while preparing or creating the pull request.
 7. Keep every automation-created API diff pull request as a **draft**. Do not request reviewers and do not mark any PR ready for review; leave both actions to a human.
 8. This worker handles **exactly one** comparison per run.
 9. Always write a concise markdown run report describing the resolved comparison, what action was taken, and why.
@@ -150,7 +156,7 @@ Use the local `release-notes/ApiDiff-Run.ps1` script directly to generate exactl
 ## Input behavior
 
 - Treat the four `workflow_dispatch` inputs as an all-or-none set:
-  - If all four inputs are empty, run `release-notes/ApiDiff-Run.ps1` with no version parameters so it infers the next milestone comparison automatically.
+  - If all four inputs are empty, run `release-notes/ApiDiff-CollectAssemblies.ps1` with no version parameters so it infers the next milestone comparison automatically.
   - If any input is provided, require all four values together and use them to target the comparison explicitly.
 - Input mapping:
   - `previous_major_minor` and `current_major_minor` are just the release line, such as `11.0` or `10.0`
@@ -167,46 +173,66 @@ Use the local `release-notes/ApiDiff-Run.ps1` script directly to generate exactl
 
 1. Resolve exactly one target comparison for this run.
    - Use the explicit inputs when they are supplied.
-   - Otherwise let `release-notes/ApiDiff-Run.ps1` infer the next milestone comparison automatically by running it with no version parameters first.
-2. Choose the feed strategy before generation:
+   - Otherwise run `release-notes/ApiDiff-CollectAssemblies.ps1` with no version parameters to let it infer the next milestone comparison automatically.
+2. Choose the feed strategy before assembly collection:
    - For the release-to-release comparison such as `previous ga -> current ga`, stay on the default public behavior only and resolve the current side to the **latest version currently available on `dotnet-public`** for the current release line. Do **not** use any release-specific feed fallback for this case.
    - For the next preview-to-preview comparison on a major release line, try `dotnet-public` first.
    - Only if `dotnet-public` does not have the target preview version available yet, retry once using the release-specific feed `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json`, where `{MAJOR}` is the major version number for the current release line.
    - Use that fallback only for the preview run that advances to the next preview milestone. Do not use it for the release-to-release run.
    - Make that fallback concrete:
-     1. First run the comparison with the normal default behavior and no custom feed arguments.
+     1. First run the collection with the normal default behavior and no custom feed arguments.
      2. If the result shows that the target preview is not yet available on `dotnet-public`, rerun the same comparison exactly once with `-CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"`.
      3. Keep `-PreviousNuGetFeed` on its default public value unless the script explicitly indicates the previous side also cannot be resolved from `dotnet-public`.
    - If the initial no-argument inferred run fails specifically because the target preview is not yet on `dotnet-public`, infer the same comparison from the script output or the existing `release-notes/**/api-diff/` progression and rerun it explicitly with the same previous/current values plus the `CurrentNuGetFeed` override.
    - Use the concrete command shapes below and substitute the resolved values for this run:
 
      ```powershell
-     pwsh -File ./release-notes/ApiDiff-Run.ps1
+     pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1
      ```
 
      ```powershell
-     pwsh -File ./release-notes/ApiDiff-Run.ps1 `
+     pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1 `
        -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
        -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
        [-PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_NOT_GA}] `
        [-CurrentPrereleaseLabel {CURRENT_LABEL_IF_NOT_GA}] `
-       [-CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"] `
-       [-InstallApiDiff]
+       [-CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"]
      ```
 
-   - Prefer direct script invocation over the skill wrapper even for explicit runs, because the script gives more deterministic behavior and clearer logs in GitHub Actions.
-3. Invoke `release-notes/ApiDiff-Run.ps1` directly to generate that comparison using the selected feed behavior.
-4. On GitHub-hosted runners, make sure the ApiDiff tool is installed or updated if the first run indicates that it is missing. Prefer re-running with `-InstallApiDiff` rather than failing the workflow.
-5. Inspect the generated files to determine the before and after releases and confirm which `release-notes/**/api-diff/**` content changed for the target comparison.
-6. Search for an existing **open** pull request in this repository that already has the `[API Diff]` title prefix, the `automation` label, and matches the same target comparison.
-7. If the matching PR exists and is a **draft**, update its title or body as needed and use `push_to_pull_request_branch` to refresh the same branch instead of creating a second PR.
-8. If the matching draft PR is already fully current and there is nothing to push or update, invoke `noop` with that explanation and stop instead of exiting silently.
-9. If the matching PR exists and is **not** a draft, treat it as human-owned, invoke the `noop` tool with a brief explanation, and stop without changing it.
-10. If no matching PR exists and this was an inferred no-input run, check whether the corresponding API diff is already present on `main`. If it is already present, invoke `noop` and stop.
-11. If no matching PR exists and this was an explicit run, it is acceptable to regenerate that comparison even when the corresponding files already exist on `main`; only create a PR if the regenerated content actually differs.
-12. If there are no file changes after generation, invoke `noop` and stop.
-13. Otherwise create a new **draft** PR for that comparison.
-14. As a final safety check, if you are about to end the run without calling `create_pull_request`, `update_pull_request`, or `push_to_pull_request_branch`, invoke `noop` first so the run always emits an intentional safe output.
+3. Run `release-notes/ApiDiff-CollectAssemblies.ps1` to download reference assemblies and produce a JSON manifest. Capture the JSON output from stdout. The manifest includes:
+   - `beforeLabel` / `afterLabel` — friendly version names
+   - `tableOfContentsTitle` — filename prefix for per-assembly reports
+   - `outputPath` — absolute path to the api-diff output directory
+   - `sdks` — array of SDK entries, each with `name`, `beforePath`, `afterPath`, and optional `refBeforePath` / `refAfterPath`
+4. For each SDK entry in the manifest's `sdks` array, call the `generate_api_diff` MCP tool with:
+   - `beforePath` and `afterPath` from the SDK entry
+   - `beforeLabel` and `afterLabel` from the manifest root
+   - `refBeforePath` and `refAfterPath` from the SDK entry (omit when null)
+   - `outputPath` set to `{manifest.outputPath}/Microsoft.{sdk.name}.App`
+   - `tableOfContentsTitle` from the manifest root
+   - `assemblyExclusionSets`: `["release-notes"]`
+   - `attributeExclusionSets`: `["release-notes"]`
+5. Create the summary `README.md` in the manifest's `outputPath` directory with this format:
+
+   ```markdown
+   # {afterLabel} API Changes
+
+   The following API changes were made in {afterLabel}:
+
+   - [Microsoft.{sdk.name}.App](./Microsoft.{sdk.name}.App/{tableOfContentsTitle}.md)
+   ```
+
+   Include one bullet per SDK entry in the manifest.
+6. Inspect the generated files to determine the before and after releases and confirm which `release-notes/**/api-diff/**` content changed for the target comparison.
+7. Search for an existing **open** pull request in this repository that already has the `[API Diff]` title prefix, the `automation` label, and matches the same target comparison.
+8. If the matching PR exists and is a **draft**, update its title or body as needed and use `push_to_pull_request_branch` to refresh the same branch instead of creating a second PR.
+9. If the matching draft PR is already fully current and there is nothing to push or update, invoke `noop` with that explanation and stop instead of exiting silently.
+10. If the matching PR exists and is **not** a draft, treat it as human-owned, invoke the `noop` tool with a brief explanation, and stop without changing it.
+11. If no matching PR exists and this was an inferred no-input run, check whether the corresponding API diff is already present on `main`. If it is already present, invoke `noop` and stop.
+12. If no matching PR exists and this was an explicit run, it is acceptable to regenerate that comparison even when the corresponding files already exist on `main`; only create a PR if the regenerated content actually differs.
+13. If there are no file changes after generation, invoke `noop` and stop.
+14. Otherwise create a new **draft** PR for that comparison.
+15. As a final safety check, if you are about to end the run without calling `create_pull_request`, `update_pull_request`, or `push_to_pull_request_branch`, invoke `noop` first so the run always emits an intentional safe output.
 
 ## Step summary report
 
