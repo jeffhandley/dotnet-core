@@ -24,3 +24,26 @@ jobs:
         uses: github/gh-aw-actions/setup-cli@31130b20a8fd3ef263acbe2091267c0aace07e09 # v0.65.6
         with:
           version: v0.65.6
+
+      # [NO-MERGE] Build and install the apidiff MCP server from source
+      # until the package is published to the transport feed.
+      - name: Build apidiff MCP server from source
+        run: |
+          git clone --depth 1 --branch jeffhandley/apidiff-mcpserver \
+            https://github.com/jeffhandley/sdk.git /tmp/apidiff-mcp-src
+
+          cd /tmp/apidiff-mcp-src
+
+          # Build the McpServer project using the repo's Arcade infrastructure
+          ./build.sh -c Release \
+            --projects "$PWD/src/Compatibility/ApiDiff/Microsoft.DotNet.ApiDiff.McpServer/Microsoft.DotNet.ApiDiff.McpServer.csproj"
+
+          # Locate the build output and copy to a known path
+          APIDIFF_BIN="$(find artifacts/bin/Microsoft.DotNet.ApiDiff.McpServer/Release -name 'Microsoft.DotNet.ApiDiff.McpServer.dll' | head -1)"
+          APIDIFF_DIR="$(dirname "$APIDIFF_BIN")"
+
+          mkdir -p /opt/apidiff-mcp
+          cp -r "$APIDIFF_DIR"/* /opt/apidiff-mcp/
+
+          echo "apidiff MCP server installed to /opt/apidiff-mcp"
+          ls -la /opt/apidiff-mcp/Microsoft.DotNet.ApiDiff.McpServer.dll
