@@ -29,6 +29,8 @@ safe-outputs:
       - release-notes/**/api-diff/**.md
       - release-notes/ApiDiffAssembliesToExclude.txt
       - release-notes/ApiDiffAttributesToExclude.txt
+      - .github/workflows/api-diff.md
+      - .github/workflows/api-diff.lock.yml
   push-to-pull-request-branch:
     target: "*"
     title-prefix: "[API Diff] "
@@ -39,6 +41,8 @@ safe-outputs:
       - release-notes/**/api-diff/**.md
       - release-notes/ApiDiffAssembliesToExclude.txt
       - release-notes/ApiDiffAttributesToExclude.txt
+      - .github/workflows/api-diff.md
+      - .github/workflows/api-diff.lock.yml
   update-pull-request:
     target: "*"
     max: 1
