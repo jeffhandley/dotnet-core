@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "apidiff": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["exec", "/opt/apidiff-mcp/Microsoft.DotNet.ApiDiff.McpServer.dll"]
+    }
+  }
+}
