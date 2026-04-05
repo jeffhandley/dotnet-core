@@ -130,7 +130,7 @@ engine:
 
 # Produce one API diff PR
 
-Use the local `release-notes/RunApiDiff.ps1` script directly to generate exactly one API diff comparison and then create or refresh the matching pull request. You may consult `@.github/skills/api-diff` only as a parameter-mapping reference, but do not route the main generation step through the skill wrapper.
+Use the local `release-notes/ApiDiff-Run.ps1` script directly to generate exactly one API diff comparison and then create or refresh the matching pull request. You may consult `@.github/skills/api-diff` only as a parameter-mapping reference, but do not route the main generation step through the skill wrapper.
 
 ## Operating rules
 
@@ -150,7 +150,7 @@ Use the local `release-notes/RunApiDiff.ps1` script directly to generate exactly
 ## Input behavior
 
 - Treat the four `workflow_dispatch` inputs as an all-or-none set:
-  - If all four inputs are empty, run `release-notes/RunApiDiff.ps1` with no version parameters so it infers the next milestone comparison automatically.
+  - If all four inputs are empty, run `release-notes/ApiDiff-Run.ps1` with no version parameters so it infers the next milestone comparison automatically.
   - If any input is provided, require all four values together and use them to target the comparison explicitly.
 - Input mapping:
   - `previous_major_minor` and `current_major_minor` are just the release line, such as `11.0` or `10.0`
@@ -167,7 +167,7 @@ Use the local `release-notes/RunApiDiff.ps1` script directly to generate exactly
 
 1. Resolve exactly one target comparison for this run.
    - Use the explicit inputs when they are supplied.
-   - Otherwise let `release-notes/RunApiDiff.ps1` infer the next milestone comparison automatically by running it with no version parameters first.
+   - Otherwise let `release-notes/ApiDiff-Run.ps1` infer the next milestone comparison automatically by running it with no version parameters first.
 2. Choose the feed strategy before generation:
    - For the release-to-release comparison such as `previous ga -> current ga`, stay on the default public behavior only and resolve the current side to the **latest version currently available on `dotnet-public`** for the current release line. Do **not** use any release-specific feed fallback for this case.
    - For the next preview-to-preview comparison on a major release line, try `dotnet-public` first.
@@ -181,11 +181,11 @@ Use the local `release-notes/RunApiDiff.ps1` script directly to generate exactly
    - Use the concrete command shapes below and substitute the resolved values for this run:
 
      ```powershell
-     pwsh -File ./release-notes/RunApiDiff.ps1
+     pwsh -File ./release-notes/ApiDiff-Run.ps1
      ```
 
      ```powershell
-     pwsh -File ./release-notes/RunApiDiff.ps1 `
+     pwsh -File ./release-notes/ApiDiff-Run.ps1 `
        -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
        -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
        [-PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_NOT_GA}] `
@@ -195,7 +195,7 @@ Use the local `release-notes/RunApiDiff.ps1` script directly to generate exactly
      ```
 
    - Prefer direct script invocation over the skill wrapper even for explicit runs, because the script gives more deterministic behavior and clearer logs in GitHub Actions.
-3. Invoke `release-notes/RunApiDiff.ps1` directly to generate that comparison using the selected feed behavior.
+3. Invoke `release-notes/ApiDiff-Run.ps1` directly to generate that comparison using the selected feed behavior.
 4. On GitHub-hosted runners, make sure the ApiDiff tool is installed or updated if the first run indicates that it is missing. Prefer re-running with `-InstallApiDiff` rather than failing the workflow.
 5. Inspect the generated files to determine the before and after releases and confirm which `release-notes/**/api-diff/**` content changed for the target comparison.
 6. Search for an existing **open** pull request in this repository that already has the `[API Diff]` title prefix, the `automation` label, and matches the same target comparison.

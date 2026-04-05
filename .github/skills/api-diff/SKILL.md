@@ -1,12 +1,12 @@
 ---
 name: api-diff
-description: Generate an API comparison report between two .NET versions using the RunApiDiff.ps1 script. Invoke when the user asks to run, create, or generate an API diff.
+description: Generate an API comparison report between two .NET versions using the ApiDiff.ps1 script. Invoke when the user asks to run, create, or generate an API diff.
 disable-model-invocation: true
 ---
 
 # API Diff Generation
 
-Map the user's request to parameters for `release-notes/RunApiDiff.ps1` and run it. See [release-notes/RunApiDiff.md](../../../release-notes/RunApiDiff.md) for the full parameter reference.
+Map the user's request to parameters for `release-notes/ApiDiff.ps1` and run it. See [release-notes/ApiDiff.md](../../../release-notes/ApiDiff.md) for the full parameter reference.
 
 When no versions are mentioned, run with no parameters — the script auto-infers versions.
 
@@ -30,7 +30,7 @@ When no versions are mentioned, run with no parameters — the script auto-infer
 ## Running the script
 
 ```powershell
-.\release-notes\RunApiDiff.ps1 [mapped parameters]
+.\release-notes\ApiDiff.ps1 [mapped parameters]
 ```
 
 Set an initial wait of at least 300 seconds — the script takes several minutes. Use `read_powershell` to poll for completion. The script does not print a final "done" message; it exits after generating a README.md in the output folder. After completion, summarize the results: how many diff files were generated and where.
