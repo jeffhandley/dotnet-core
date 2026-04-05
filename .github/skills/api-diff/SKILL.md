@@ -1,12 +1,17 @@
 ---
 name: api-diff
-description: Generate an API comparison report between two .NET versions using the ApiDiff.ps1 script. Invoke when the user asks to run, create, or generate an API diff.
+description: Generate an API comparison report between two .NET versions using the apidiff MCP server. Invoke when the user asks to run, create, or generate an API diff.
 disable-model-invocation: true
 ---
 
 # API Diff Generation
 
-Map the user's request to parameters for `release-notes/ApiDiff.ps1` and run it. See [release-notes/ApiDiff.md](../../../release-notes/ApiDiff.md) for the full parameter reference.
+Generate an API diff in two steps:
+
+1. Run `release-notes/ApiDiff-CollectAssemblies.ps1` to download reference assemblies and produce a JSON manifest
+2. Call the `generate_api_diff` MCP tool for each SDK in the manifest to produce markdown reports
+
+See [release-notes/ApiDiff.md](../../../release-notes/ApiDiff.md) for the full parameter reference for the collection script.
 
 When no versions are mentioned, run with no parameters — the script auto-infers versions.
 
@@ -27,10 +32,36 @@ When no versions are mentioned, run with no parameters — the script auto-infer
 - Full NuGet version strings → use `-PreviousVersion` / `-CurrentVersion` directly
 - The "previous" version is always the older version; "current" is the newer one
 
-## Running the script
+## Step 1: Collect assemblies
 
 ```powershell
-.\release-notes\ApiDiff.ps1 [mapped parameters]
+pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1 [mapped parameters]
 ```
 
-Set an initial wait of at least 300 seconds — the script takes several minutes. Use `read_powershell` to poll for completion. The script does not print a final "done" message; it exits after generating a README.md in the output folder. After completion, summarize the results: how many diff files were generated and where.
+Set an initial wait of at least 300 seconds — the script takes several minutes. Capture the JSON output; it contains the assembly paths and metadata needed for step 2.
+
+## Step 2: Generate reports via MCP tool
+
+Parse the JSON manifest output. For each SDK entry in `sdks`, call the `generate_api_diff` MCP tool with:
+
+- `beforePath` / `afterPath` — from the SDK entry
+- `beforeLabel` / `afterLabel` — from the manifest root
+- `refBeforePath` / `refAfterPath` — from the SDK entry (omit when null)
+- `outputPath` — `{manifest.outputPath}/Microsoft.{sdk.name}.App`
+- `tableOfContentsTitle` — from the manifest root
+- `assemblyExclusionSets` — `["release-notes"]`
+- `attributeExclusionSets` — `["release-notes"]`
+
+## Step 3: Create README
+
+Create `{manifest.outputPath}/README.md`:
+
+```markdown
+# {afterLabel} API Changes
+
+The following API changes were made in {afterLabel}:
+
+- [Microsoft.{sdk.name}.App](./Microsoft.{sdk.name}.App/{tableOfContentsTitle}.md)
+```
+
+One bullet per SDK entry. After completion, summarize the results: how many diff files were generated and where.
