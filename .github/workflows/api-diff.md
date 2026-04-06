@@ -11,6 +11,7 @@ permissions:
 tools:
   github:
     min-integrity: approved
+  timeout: 900
 
 runtimes:
   dotnet:
