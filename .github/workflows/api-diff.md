@@ -43,14 +43,6 @@ safe-outputs:
     target: "*"
     max: 2
     footer: false
-  add-labels:
-    allowed: [NO-MERGE]
-    max: 1
-    target: "*"
-  remove-labels:
-    allowed: [NO-MERGE]
-    max: 1
-    target: "*"
 
 # Orchestration
 if: github.event_name == 'workflow_dispatch' || !github.event.repository.fork
@@ -306,7 +298,7 @@ Include one bullet per SDK entry in the manifest.
    ```
 4. Search for an existing **open** pull request with the `[API Diff]` title prefix and `automation` label matching this comparison.
 5. If the matching PR is a **draft**, use `push_to_pull_request_branch` to refresh it.
-6. If the matching draft PR is already current with nothing to push, still reconcile PR metadata — update the PR body with the current resolved version using `update_pull_request` and manage the `NO-MERGE` label (for major-to-major PRs) using `add_labels` or `remove_labels`, then invoke `noop`.
+6. If the matching draft PR is already current with nothing to push, still reconcile PR metadata — update the PR body with the current resolved version using `update_pull_request`, then invoke `noop`.
 7. If the matching PR is **not** a draft, treat it as human-owned, invoke `noop`, and stop.
 8. If no matching PR exists and this was an inferred run, check whether the API diff is already on `main`. If so, invoke `noop` and stop.
 9. If no matching PR exists and this was an explicit run, create a PR only if the content differs from `main`.
@@ -338,11 +330,6 @@ Maintain at most one open automation PR per target API diff comparison.
   - **Resolved current version:** the specific version from the manifest's `afterLabel` (e.g., `.NET 11.0 Preview 3` or `.NET 11.0 RC 2`)
   - **Feed used:** whether the current-side version was resolved from `dotnet-public` or a daily build feed
   - Do not embed the resolved version in a way that could be confused with the canonical comparison pair.
-- **`NO-MERGE` label for major-to-major PRs:**
-  - After creating or refreshing a major-to-major PR, check the resolved current-side version from the manifest's `afterLabel`:
-    - If the resolved version is earlier than `RC 2` (i.e., any preview or `RC 1`), use `add_labels` to add the `NO-MERGE` label to the PR if not already present.
-    - If the resolved version is `RC 2` or later (including GA) **and** the version was resolved from the default `dotnet-public` feed (not a daily build feed), use `remove_labels` to remove the `NO-MERGE` label from the PR if present.
-  - Do not apply the `NO-MERGE` label to milestone-to-milestone PRs.
 - The PR body should briefly summarize what comparison was generated and list the affected owners or contributors in a format similar to the historical API diff PRs.
 - Restrict the patch to files matching these globs only:
   - `release-notes/**/api-diff/**.md`
