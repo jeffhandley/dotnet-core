@@ -258,15 +258,26 @@ Include one bullet per SDK entry in the manifest.
 ### Step 5 — Create or refresh the pull request
 
 1. Inspect the generated files to confirm which `release-notes/**/api-diff/**` content changed.
-2. Search for an existing **open** pull request with the `[API Diff]` title prefix and `automation` label matching this comparison.
-3. If the matching PR is a **draft**, use `push_to_pull_request_branch` to refresh it.
-4. If the matching draft PR is already current with nothing to push, invoke `noop` and stop.
-5. If the matching PR is **not** a draft, treat it as human-owned, invoke `noop`, and stop.
-6. If no matching PR exists and this was an inferred run, check whether the API diff is already on `main`. If so, invoke `noop` and stop.
-7. If no matching PR exists and this was an explicit run, create a PR only if the content differs from `main`.
-8. If there are no file changes after generation, invoke `noop` and stop.
-9. Otherwise create a new **draft** PR.
-10. Final safety check: if the run will end without any safe output (`create_pull_request`, `update_pull_request`, `push_to_pull_request_branch`), invoke `noop` first.
+2. Reset the comparison branch to current `main` before staging the generated files:
+   ```bash
+   git checkout main
+   git checkout -B api-diff/<previous-version>_<current-version>
+   ```
+   Using `-B` (uppercase) ensures the branch is always created fresh from the current `main`, even if a local or remote branch with that name already exists. This prevents stale files from a previous run from appearing in the patch.
+3. Stage only the generated api-diff files and commit them:
+   ```bash
+   git add release-notes/<major.minor>/preview/preview<N>/api-diff/
+   git commit -m "Generate API diff: .NET <previous> -> <current>"
+   ```
+4. Search for an existing **open** pull request with the `[API Diff]` title prefix and `automation` label matching this comparison.
+5. If the matching PR is a **draft**, use `push_to_pull_request_branch` to refresh it.
+6. If the matching draft PR is already current with nothing to push, invoke `noop` and stop.
+7. If the matching PR is **not** a draft, treat it as human-owned, invoke `noop`, and stop.
+8. If no matching PR exists and this was an inferred run, check whether the API diff is already on `main`. If so, invoke `noop` and stop.
+9. If no matching PR exists and this was an explicit run, create a PR only if the content differs from `main`.
+10. If there are no file changes after generation, invoke `noop` and stop.
+11. Otherwise create a new **draft** PR.
+12. Final safety check: if the run will end without any safe output (`create_pull_request`, `update_pull_request`, `push_to_pull_request_branch`), invoke `noop` first.
 
 ## Step summary report
 
