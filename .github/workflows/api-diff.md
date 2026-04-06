@@ -164,7 +164,7 @@ Use `release-notes/ApiDiff-CollectAssemblies.ps1` to collect reference assemblie
 ## Operating rules
 
 1. Keep the agent job read-only. Use the configured safe outputs for all PR creation, PR updates, and branch refreshes.
-2. Only include generated API diff results and directly related release-notes changes in the PR.
+2. Only include generated API diff results and directly related release-notes changes in the PR. Never include `.github/` files, workflow source files, or lock files in the patch — the safe-output handler will reject the PR if disallowed files are present.
 3. If there are no file changes after generation, do not create a PR.
 4. Use `main` as the pull request base branch.
 5. Follow the style of `dotnet/core#10281`, `#10240`, `#10148`, `#10147`, `#10138`, and `#10063`, but standardize the PR title and keep the wording current.
@@ -292,7 +292,7 @@ Include one bullet per SDK entry in the manifest.
    git checkout -B api-diff/<previous-version>_<current-version>
    ```
    Using `-B` (uppercase) ensures the branch is always created fresh from the current `main`, even if a local or remote branch with that name already exists. This prevents stale files from a previous run from appearing in the patch.
-3. Stage only the generated api-diff files and commit them:
+3. Stage **only** the generated api-diff files and commit them. Do not use `git add .` or `git add -A` — only add the specific api-diff output directory. Never include `.github/` files or any other files outside `release-notes/` in the patch:
    ```bash
    git add release-notes/<major.minor>/preview/preview<N>/api-diff/
    git commit -m "Generate API diff: .NET <previous> -> <current>"
