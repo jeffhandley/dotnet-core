@@ -76,7 +76,7 @@ on:
         required: false
         type: string
       previous_label:
-        description: "The previous milestone label (e.g. `preview.1`, `rc.2`, `ga`)."
+        description: "The previous milestone label (e.g. `preview.1`, `rc.2`, `ga`, `*`). Use `*` for latest on dotnet-public."
         required: false
         type: string
       current_major_minor:
@@ -84,7 +84,7 @@ on:
         required: false
         type: string
       current_label:
-        description: "The current milestone label (e.g. `preview.1`, `rc.2`, `ga`)."
+        description: "The current milestone label (e.g. `preview.1`, `rc.2`, `ga`, `*`). Use `*` for latest on dotnet-public."
         required: false
         type: string
 
@@ -192,7 +192,9 @@ Use `release-notes/ApiDiff-CollectAssemblies.ps1` to collect reference assemblie
     - use `preview.N` for previews, such as `preview.2`
     - use `rc.N` for release candidates, such as `rc.1`
     - use `ga` for the general-availability release
+    - use `*` for the latest version available on dotnet-public (prefers stable, falls back to latest prerelease)
 - When translating inputs to script parameters, treat `ga` as the GA case — omit the PrereleaseLabel parameter.
+- When translating inputs to script parameters, pass `*` directly as the PrereleaseLabel parameter value.
 - Do not ask for build numbers or full package versions.
 
 ## Generation steps
@@ -211,7 +213,8 @@ Run `release-notes/ApiDiff-CollectAssemblies.ps1` to resolve versions, download 
 - **When all four inputs are empty (inferred run):** run with no version parameters.
 - **When all four inputs are provided (explicit run):** map the `API_DIFF_*` environment variable values to script parameters.
 - **GA inputs:** treat `ga` as the GA case — omit the prerelease label parameter.
-- **Release-to-release comparison** (`previous ga -> current ga`): run with default feeds only. Do not use the daily feed fallback for this case.
+- **Wildcard inputs:** pass `*` directly as `-PreviousPrereleaseLabel *` or `-CurrentPrereleaseLabel *`. The script resolves the latest available version.
+- **Major-to-major comparison** (`previous ga/* -> current ga/*`): run with default feeds only. Do not use the daily feed fallback for this case.
 
 Command shapes:
 
@@ -225,6 +228,13 @@ pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1 `
   -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
   [-PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_NOT_GA}] `
   [-CurrentPrereleaseLabel {CURRENT_LABEL_IF_NOT_GA}]
+
+# Major-to-major with * (latest on dotnet-public)
+pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1 `
+  -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
+  -PreviousPrereleaseLabel * `
+  -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
+  -CurrentPrereleaseLabel *
 ```
 
 Set an initial wait of at least 300 seconds — the script takes several minutes to download and extract packages.
@@ -315,7 +325,7 @@ Maintain at most one open automation PR per target API diff comparison.
 - The safe output already enforces the `[API Diff]` prefix. Provide the remainder of the title in one of these forms:
   - `.NET 11.0 Preview 2 -> Preview 3`
   - `.NET 10.0 -> .NET 11.0`
-- Keep the release-to-release title in the stable release-line form `.NET 10.0 -> .NET 11.0` even when the underlying current-side package being compared is still the latest public preview or RC for `11.0`.
+- Keep the major-to-major title in the stable release-line form `.NET 10.0 -> .NET 11.0` even when the underlying current-side package being compared is still the latest public preview or RC for `11.0`. This applies to both `ga` and `*` labels.
 - The PR body should briefly summarize what comparison was generated and list the affected owners or contributors in a format similar to the historical API diff PRs.
 - Restrict the patch to files matching these globs only:
   - `release-notes/**/api-diff/**.md`
@@ -324,9 +334,10 @@ Maintain at most one open automation PR per target API diff comparison.
 - Always create and update these PRs as drafts with no reviewers.
 - Use stable, comparison-specific branch names so multiple in-flight API diff PRs do not interfere with each other.
   - Example milestone branch: `api-diff/net11-preview2_net11-preview3`
-  - Example release-to-release branch: `api-diff/net10_net11`
+  - Example major-to-major branch: `api-diff/net10_net11`
 
 ## Usage
 
 - **Dispatcher-triggered run:** leave all four inputs empty when the goal is to infer the next milestone comparison automatically.
-- **Direct manual run:** provide all four inputs for the comparison you want to regenerate or update, for example `11.0` + `preview.2` -> `11.0` + `preview.3`, or `10.0` + `ga` -> `11.0` + `ga`.
+- **Direct manual run:** provide all four inputs for the comparison you want to regenerate or update, for example `11.0` + `preview.2` -> `11.0` + `preview.3`, or `10.0` + `*` -> `11.0` + `*`.
+- **Major-to-major with latest versions:** use `*` as the label on both sides to compare the latest available packages, for example `10.0` + `*` -> `11.0` + `*`. The script prefers stable versions but falls back to the latest prerelease when GA has not yet shipped.

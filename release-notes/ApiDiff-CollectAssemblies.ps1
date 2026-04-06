@@ -14,9 +14,9 @@ Param (
     ,
     [Parameter(Mandatory = $false)]
     [AllowEmptyString()]
-    [ValidatePattern("^((preview|rc)\.\d+)?$")]
+    [ValidatePattern("^((preview|rc)\.\d+|\*)?$")]
     [string]
-    $PreviousPrereleaseLabel # "preview.7", "rc.1", etc. Omit for GA.
+    $PreviousPrereleaseLabel # "preview.7", "rc.1", etc. Omit for GA. Use "*" for latest.
     ,
     [Parameter(Mandatory = $false)]
     [ValidatePattern("^(\d+\.\d+)?$")]
@@ -25,9 +25,9 @@ Param (
     ,
     [Parameter(Mandatory = $false)]
     [AllowEmptyString()]
-    [ValidatePattern("^((preview|rc)\.\d+)?$")]
+    [ValidatePattern("^((preview|rc)\.\d+|\*)?$")]
     [string]
-    $CurrentPrereleaseLabel # "preview.7", "rc.1", etc. Omit for GA.
+    $CurrentPrereleaseLabel # "preview.7", "rc.1", etc. Omit for GA. Use "*" for latest.
     ,
     [Parameter(Mandatory = $false)]
     [string]
@@ -109,10 +109,13 @@ Function ParsePrereleaseLabel {
     If ([System.String]::IsNullOrWhiteSpace($label)) {
         Return @{ ReleaseKind = "ga"; PreviewRCNumber = "0" }
     }
+    If ($label -eq "*") {
+        Return @{ ReleaseKind = "*"; PreviewRCNumber = "0" }
+    }
     If ($label -match "^(preview|rc)\.(\d+)$") {
         Return @{ ReleaseKind = $Matches[1]; PreviewRCNumber = $Matches[2] }
     }
-    Write-Error "Invalid prerelease label '$label'. Expected format: 'preview.N' or 'rc.N'." -ErrorAction Stop
+    Write-Error "Invalid prerelease label '$label'. Expected format: 'preview.N', 'rc.N', or '*'." -ErrorAction Stop
 }
 
 Function GetMilestoneSortWeight {
@@ -380,7 +383,7 @@ Function GetDotNetFullName {
         ,
         [Parameter(Mandatory = $true)]
         [string]
-        [ValidateSet("preview", "rc", "ga")]
+        [ValidateSet("preview", "rc", "ga", "*")]
         $releaseKind
         ,
         [Parameter(Mandatory = $true)]
@@ -393,7 +396,7 @@ Function GetDotNetFullName {
         Return "$dotNetVersion.$previewNumberVersion"
     }
 
-    If ($releaseKind -eq "ga") {
+    If ($releaseKind -In @("ga", "*")) {
         If ($previewNumberVersion -eq "0") {
             Return "$dotNetVersion-$releaseKind"
         }
@@ -412,7 +415,7 @@ Function GetDotNetFriendlyName {
         ,
         [Parameter(Mandatory = $true)]
         [string]
-        [ValidateSet("preview", "rc", "ga")]
+        [ValidateSet("preview", "rc", "ga", "*")]
         $releaseKind
         ,
         [Parameter(Mandatory = $true)]
@@ -420,6 +423,10 @@ Function GetDotNetFriendlyName {
         [string]
         $PreviewNumberVersion # 0, 1, 2, 3, ...
     )
+
+    If ($releaseKind -eq "*") {
+        Return ".NET $DotNetVersion"
+    }
 
     $friendlyPreview = ""
     If ($releaseKind -eq "preview") {
@@ -448,7 +455,7 @@ Function GetReleaseKindFolderName {
         ,
         [Parameter(Mandatory = $true)]
         [string]
-        [ValidateSet("preview", "rc", "ga")]
+        [ValidateSet("preview", "rc", "ga", "*")]
         $releaseKind
         ,
         [Parameter(Mandatory = $true)]
@@ -457,7 +464,7 @@ Function GetReleaseKindFolderName {
         $previewNumberVersion # 0, 1, 2, 3, ...
     )
 
-    If ($releaseKind -eq "ga") {
+    If ($releaseKind -In @("ga", "*")) {
         If ($previewNumberVersion -eq "0") {
             Return $releaseKind
         }
@@ -481,7 +488,7 @@ Function GetPreviewFolderPath {
         ,
         [Parameter(Mandatory = $true)]
         [string]
-        [ValidateSet("preview", "rc", "ga")]
+        [ValidateSet("preview", "rc", "ga", "*")]
         $releaseKind
         ,
         [Parameter(Mandatory = $true)]
@@ -491,7 +498,7 @@ Function GetPreviewFolderPath {
         ,
         [Parameter(Mandatory = $true)]
         [bool]
-        $IsComparingReleases # True when comparing 8.0 GA with 9.0 GA
+        $IsComparingReleases # True when comparing releases across major versions
     )
 
     $prefixFolder = [IO.Path]::Combine($rootFolder, "release-notes", $dotNetVersion)
@@ -534,7 +541,7 @@ Function DownloadPackage {
         $dotNetVersion
         ,
         [Parameter(Mandatory = $false)]
-        [ValidateSet("preview", "rc", "ga", "")]
+        [ValidateSet("preview", "rc", "ga", "*", "")]
         [string]
         $releaseKind = ""
         ,
@@ -572,7 +579,12 @@ Function DownloadPackage {
 
         # Search for the package version
         $searchTerm = ""
-        If ($releaseKind -eq "ga") {
+        $preferStable = $false
+        If ($releaseKind -eq "*") {
+            $searchTerm = "$dotNetVersion.*"
+            $preferStable = $true
+        }
+        ElseIf ($releaseKind -eq "ga") {
             $searchTerm = "$dotNetVersion.$previewNumberVersion"
         }
         Else {
@@ -591,7 +603,19 @@ Function DownloadPackage {
                 $versionsResult = Invoke-RestMethod -Uri $versionsUrl
                 $matchingVersions = @($versionsResult.versions | Where-Object { $_ -Like $searchTerm } | Sort-Object -Descending)
 
-                If ($matchingVersions.Count -gt 0) {
+                If ($preferStable) {
+                    # For *, prefer stable versions over prerelease
+                    $stableVersions = @($matchingVersions | Where-Object { $_ -NotLike "*-*" })
+                    If ($stableVersions.Count -gt 0) {
+                        $version = $stableVersions[0]
+                        Write-Color green "Found stable version '$version' via flat2."
+                    }
+                    ElseIf ($matchingVersions.Count -gt 0) {
+                        $version = $matchingVersions[0]
+                        Write-Color green "Found prerelease version '$version' via flat2 (no stable version available)."
+                    }
+                }
+                ElseIf ($matchingVersions.Count -gt 0) {
                     $version = $matchingVersions[0]
                     Write-Color green "Found version '$version' via flat2."
                 }
@@ -636,7 +660,18 @@ Function DownloadPackage {
                 Write-Error "No NuGet packages found with search term '$searchTerm'." -ErrorAction Stop
             }
 
-            $version = $matchingVersions[0].version
+            If ($preferStable) {
+                $stableVersions = @($matchingVersions | Where-Object { $_.version -NotLike "*-*" })
+                If ($stableVersions.Count -gt 0) {
+                    $version = $stableVersions[0].version
+                }
+                Else {
+                    $version = $matchingVersions[0].version
+                }
+            }
+            Else {
+                $version = $matchingVersions[0].version
+            }
         }
     }
 
@@ -800,8 +835,8 @@ If ($PreviousMajorMinor -eq $CurrentMajorMinor -and $PreviousPrereleaseLabel -eq
     Write-Error "Previous and current versions are the same ($previousDesc). Ensure -PreviousNuGetFeed and -CurrentNuGetFeed point to different versions, or specify version parameters explicitly." -ErrorAction Stop
 }
 
-# True when comparing GA releases across major versions
-$IsComparingReleases = ($PreviousMajorMinor -Ne $CurrentMajorMinor) -And ($PreviousReleaseKind -Eq "ga") -And ($CurrentReleaseKind -eq "ga")
+# True when comparing releases across major versions (ga or * on both sides)
+$IsComparingReleases = ($PreviousMajorMinor -Ne $CurrentMajorMinor) -And ($PreviousReleaseKind -In @("ga", "*")) -And ($CurrentReleaseKind -In @("ga", "*"))
 
 ## Resolve exclude file paths relative to the script's directory if they are relative paths
 If (-not [System.IO.Path]::IsPathRooted($AttributesToExcludeFilePath)) {
