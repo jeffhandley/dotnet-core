@@ -15,6 +15,8 @@ See [release-notes/ApiDiff.md](../../../release-notes/ApiDiff.md) for the full p
 
 When no versions are mentioned, run with no parameters — the script auto-infers versions.
 
+> **Important:** Never modify, create, edit, or delete any file under `.github/` at any point, including this skill file, workflow `.md` source files, and compiled `.lock.yml` files. These files are strictly read-only.
+
 ## Mapping natural language to parameters
 
 | User says | Parameters |
