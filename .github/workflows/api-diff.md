@@ -12,6 +12,12 @@ tools:
   github:
     min-integrity: approved
 
+mcp-servers:
+  apidiff:
+    command: dotnet
+    args: ["exec", "/opt/apidiff-mcp/Microsoft.DotNet.ApiDiff.McpServer.dll"]
+    allowed: ["generate_api_diff"]
+
 safe-outputs:
   noop:
     max: 1
