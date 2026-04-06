@@ -113,10 +113,10 @@ Use the generated `api_diff` workflow-dispatch tool to fan out `api-diff` worker
      - treat `.NET 11`, `.NET 11.0`, `net11`, and `net11.0` as the same `11.0`
      - if the right-hand side omits the major/minor, as in `.NET 11.0 Preview 2 -> Preview 3`, assume it stays on the same release line unless there is clear evidence otherwise
    - For titles like `.NET 11.0 Preview 2 -> Preview 3`, dispatch `api_diff` with `previous_major_minor=11.0`, `previous_label=preview.2`, `current_major_minor=11.0`, and `current_label=preview.3`.
-   - For titles like `.NET 10.0 -> .NET 11.0`, dispatch `api_diff` with `previous_major_minor=10.0`, `previous_label=*`, `current_major_minor=11.0`, and `current_label=*`.
+   - For titles like `.NET 10.0 -> .NET 11.0`, dispatch `api_diff` with `previous_major_minor=10.0`, `previous_label=ga`, `current_major_minor=11.0`, and `current_label=*`.
 4. If a draft PR's pair cannot be recovered confidently, skip that one rather than guessing.
 5. Ensure there is an open major-to-major PR in flight for the active major release train, counting either draft or non-draft PRs.
-   - If no such PR exists, dispatch `api_diff` once for the next major-to-major comparison, such as `10.0` + `*` -> `11.0` + `*`.
+   - If no such PR exists, dispatch `api_diff` once for the next major-to-major comparison, such as `10.0` + `ga` -> `11.0` + `*`.
    - If the resulting worker run determines there is nothing new to change, it may legitimately noop without creating a PR or issue.
 6. Always dispatch `api_diff` once **with no inputs** so the worker can infer whether the next milestone-to-milestone comparison should now be started or refreshed.
 7. If a comparison already has an open non-draft PR, do not dispatch another worker run for that same pair.
@@ -137,4 +137,4 @@ Keep the report concise, readable, and action-oriented so a human can quickly un
 
 ## Usage
 
-- **Scheduled or manual dispatcher run:** the workflow automatically refreshes known draft API diff PRs, leaves non-drafts alone, ensures a major-to-major comparison is represented (using `*` to find the latest available versions), and kicks off one no-input worker run to discover the next milestone.
+- **Scheduled or manual dispatcher run:** the workflow automatically refreshes known draft API diff PRs, leaves non-drafts alone, ensures a major-to-major comparison is represented (using `ga` for the previous release and `*` to find the latest current version), and kicks off one no-input worker run to discover the next milestone.
