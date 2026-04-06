@@ -121,6 +121,24 @@ on:
         SECRET_8: ${{ secrets.COPILOT_PAT_8 }}
         SECRET_9: ${{ secrets.COPILOT_PAT_9 }}
 
+    - name: Summarize comparison versions
+      env:
+        PREV_MAJOR_MINOR: ${{ inputs.previous_major_minor }}
+        PREV_LABEL: ${{ inputs.previous_label }}
+        CURR_MAJOR_MINOR: ${{ inputs.current_major_minor }}
+        CURR_LABEL: ${{ inputs.current_label }}
+      shell: bash
+      run: |
+        echo "## API Diff Comparison" >> "$GITHUB_STEP_SUMMARY"
+        if [ -n "$PREV_MAJOR_MINOR" ] && [ -n "$PREV_LABEL" ] && [ -n "$CURR_MAJOR_MINOR" ] && [ -n "$CURR_LABEL" ]; then
+          echo "| | Version | Label |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Before** | $PREV_MAJOR_MINOR | $PREV_LABEL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **After** | $CURR_MAJOR_MINOR | $CURR_LABEL |" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "No explicit inputs provided — the agent will infer the next milestone comparison automatically." >> "$GITHUB_STEP_SUMMARY"
+        fi
+
 jobs:
   pre-activation:
     outputs:
