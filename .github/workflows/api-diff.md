@@ -12,10 +12,15 @@ tools:
   github:
     min-integrity: approved
 
+runtimes:
+  dotnet:
+    version: "10.0"
+
 mcp-servers:
   apidiff:
-    command: dotnet
-    args: ["exec", "/opt/apidiff-mcp/Microsoft.DotNet.ApiDiff.McpServer.dll"]
+    container: "mcr.microsoft.com/dotnet/runtime:10.0"
+    args: ["-v", "/opt/apidiff-mcp:/opt/apidiff-mcp:ro", "--entrypoint", "dotnet"]
+    entrypointArgs: ["exec", "/opt/apidiff-mcp/Microsoft.DotNet.ApiDiff.McpServer.dll"]
     allowed: ["generate_api_diff"]
 
 safe-outputs:
@@ -72,6 +77,23 @@ network:
 checkout:
   fetch: ["*"]
   fetch-depth: 0
+
+# [NO-MERGE] Build and install the apidiff MCP server from source
+# until the package is published to the transport feed.
+steps:
+  - name: Build apidiff MCP server from source
+    run: |
+      git clone --depth 1 --branch jeffhandley/apidiff-mcpserver \
+        https://github.com/jeffhandley/sdk.git /tmp/apidiff-mcp-src
+      cd /tmp/apidiff-mcp-src
+      ./build.sh -c Release \
+        --projects "$PWD/src/Compatibility/ApiDiff/Microsoft.DotNet.ApiDiff.McpServer/Microsoft.DotNet.ApiDiff.McpServer.csproj"
+      APIDIFF_BIN="$(find artifacts/bin/Microsoft.DotNet.ApiDiff.McpServer/Release -name 'Microsoft.DotNet.ApiDiff.McpServer.dll' | head -1)"
+      APIDIFF_DIR="$(dirname "$APIDIFF_BIN")"
+      sudo mkdir -p /opt/apidiff-mcp
+      sudo cp -r "$APIDIFF_DIR"/* /opt/apidiff-mcp/
+      echo "apidiff MCP server installed to /opt/apidiff-mcp"
+      ls -la /opt/apidiff-mcp/Microsoft.DotNet.ApiDiff.McpServer.dll
 
 # Triggers
 on:
