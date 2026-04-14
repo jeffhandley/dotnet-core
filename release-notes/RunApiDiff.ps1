@@ -233,31 +233,28 @@ Function GetNextVersionFromFeed {
     $currentParsed = ParsePrereleaseLabel $prereleaseLabel
     $currentWeight = GetMilestoneSortWeight $currentParsed.ReleaseKind ([int]$currentParsed.PreviewRCNumber)
 
-    $serviceIndex = Invoke-RestMethod -Uri $feedUrl
-    $flatContainer = $serviceIndex.resources | Where-Object { $_.'@type' -match 'PackageBaseAddress' } | Select-Object -First 1
-    If (-not $flatContainer) { Return $null }
-
-    $baseUrl = $flatContainer.'@id'
-    $versionsUrl = "${baseUrl}microsoft.netcore.app.ref/index.json"
-
-    try {
-        $versionsResult = Invoke-RestMethod -Uri $versionsUrl
-    }
-    catch { Return $null }
-
-    If (-not $versionsResult.versions -or $versionsResult.versions.Count -eq 0) { Return $null }
+    $versions = SearchRefPackVersions "Microsoft.NETCore.App.Ref" $feedUrl
+    if ($versions.Count -eq 0) { Return $null }
 
     # Find versions for the same MajorMinor that come after the current milestone
     $candidates = @()
-    ForEach ($v in $versionsResult.versions) {
+    $nextMajor = [int]($majorMinor.Split(".")[0]) + 1
+    $nextMajorMinor = "$nextMajor.0"
+    $nextMajorCandidate = $null
+
+    ForEach ($v in $versions) {
         $parsed = $null
         try { $parsed = ParseVersionString $v "probe" } catch { Continue }
-        If ($parsed.MajorMinor -ne $majorMinor) { Continue }
 
-        $milestoneParsed = ParsePrereleaseLabel $parsed.PrereleaseLabel
-        $weight = GetMilestoneSortWeight $milestoneParsed.ReleaseKind ([int]$milestoneParsed.PreviewRCNumber)
-        If ($weight -gt $currentWeight) {
-            $candidates += @{ MajorMinor = $parsed.MajorMinor; PrereleaseLabel = $parsed.PrereleaseLabel; Weight = $weight }
+        If ($parsed.MajorMinor -eq $majorMinor) {
+            $milestoneParsed = ParsePrereleaseLabel $parsed.PrereleaseLabel
+            $weight = GetMilestoneSortWeight $milestoneParsed.ReleaseKind ([int]$milestoneParsed.PreviewRCNumber)
+            If ($weight -gt $currentWeight) {
+                $candidates += @{ MajorMinor = $parsed.MajorMinor; PrereleaseLabel = $parsed.PrereleaseLabel; Weight = $weight }
+            }
+        }
+        ElseIf ($parsed.MajorMinor -eq $nextMajorMinor -and -not $nextMajorCandidate) {
+            $nextMajorCandidate = @{ MajorMinor = $parsed.MajorMinor; PrereleaseLabel = $parsed.PrereleaseLabel }
         }
     }
 
@@ -265,33 +262,9 @@ Function GetNextVersionFromFeed {
         Return ($candidates | Sort-Object { $_.Weight } | Select-Object -First 1)
     }
 
-    # No newer milestone found on the same major — try the next major
-    $nextMajor = [int]($majorMinor.Split(".")[0]) + 1
-    $nextMajorMinor = "$nextMajor.0"
-
-    Write-Color cyan "No newer milestone found for $majorMinor on feed. Probing for $nextMajorMinor..."
-
-    try {
-        $nextServiceIndex = Invoke-RestMethod -Uri $feedUrl
-        $nextFlatContainer = $nextServiceIndex.resources | Where-Object { $_.'@type' -match 'PackageBaseAddress' } | Select-Object -First 1
-        If (-not $nextFlatContainer) { Return $null }
-
-        $nextBaseUrl = $nextFlatContainer.'@id'
-        $nextVersionsUrl = "${nextBaseUrl}microsoft.netcore.app.ref/index.json"
-        $nextVersionsResult = Invoke-RestMethod -Uri $nextVersionsUrl
-
-        If ($nextVersionsResult.versions -and $nextVersionsResult.versions.Count -gt 0) {
-            ForEach ($v in $nextVersionsResult.versions) {
-                $parsed = $null
-                try { $parsed = ParseVersionString $v "probe" } catch { Continue }
-                If ($parsed.MajorMinor -eq $nextMajorMinor) {
-                    Return @{ MajorMinor = $parsed.MajorMinor; PrereleaseLabel = $parsed.PrereleaseLabel }
-                }
-            }
-        }
-    }
-    catch {
-        Write-Color yellow "Could not probe next major feed: $_"
+    If ($nextMajorCandidate) {
+        Write-Color cyan "No newer milestone found for $majorMinor on feed. Found $nextMajorMinor."
+        Return $nextMajorCandidate
     }
 
     Return $null
@@ -316,27 +289,14 @@ Function DiscoverVersionFromFeed {
     )
 
     $refPackageName = "Microsoft.$sdkName.App.Ref"
-    $pkgIdLower = $refPackageName.ToLower()
+    $versions = SearchRefPackVersions $refPackageName $feedUrl
 
-    Write-Color cyan "Discovering $label version of $refPackageName from feed '$feedUrl'..."
-
-    $serviceIndex = Invoke-RestMethod -Uri $feedUrl
-    $flatContainer = $serviceIndex.resources | Where-Object { $_.'@type' -match 'PackageBaseAddress' } | Select-Object -First 1
-
-    If (-not $flatContainer) {
-        Write-Error "Could not find PackageBaseAddress endpoint in feed '$feedUrl'. Please specify -${label}MajorMinor and -${label}PrereleaseLabel explicitly." -ErrorAction Stop
+    If ($versions.Count -eq 0) {
+        Write-Error "No versions of ref pack '$refPackageName' found on '$(GetFeedName $feedUrl)'. Please specify -${label}MajorMinor and -${label}PrereleaseLabel explicitly." -ErrorAction Stop
     }
 
-    $baseUrl = $flatContainer.'@id'
-    $versionsUrl = "${baseUrl}${pkgIdLower}/index.json"
-    $versionsResult = Invoke-RestMethod -Uri $versionsUrl
-
-    If (-not $versionsResult.versions -or $versionsResult.versions.Count -eq 0) {
-        Write-Error "No versions of $refPackageName found on feed '$feedUrl'. Please specify -${label}MajorMinor and -${label}PrereleaseLabel explicitly." -ErrorAction Stop
-    }
-
-    $latestVersion = $versionsResult.versions | Select-Object -Last 1
-    Write-Color cyan "Latest $refPackageName version on feed: $latestVersion"
+    $latestVersion = $versions | Select-Object -First 1
+    Write-Color cyan "Latest ref pack version on $(GetFeedName $feedUrl): $latestVersion"
 
     Return ParseVersionString $latestVersion $label
 }
@@ -365,6 +325,53 @@ Function ResolveFeedUrl {
     $feedName = $feedName.Trim()
     if ($feedName -match '^https?://') { return $feedName }
     return "https://pkgs.dev.azure.com/dnceng/public/_packaging/$feedName/nuget/v3/index.json"
+}
+
+## Extract a human-readable feed name from a NuGet feed URL (e.g., "dotnet-public", "dotnet11").
+Function GetFeedName {
+    Param ([Parameter(Mandatory = $true)] [string] $feedUrl)
+    if ($feedUrl -match '/_packaging/([^/]+)/') { return $matches[1] }
+    return $feedUrl
+}
+
+## Search for all versions of a ref pack on a NuGet feed using the dotnet CLI.
+## Returns version strings in feed order (newest-first).
+Function SearchRefPackVersions {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $packageId,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $feedUrl
+    )
+
+    $feedName = GetFeedName $feedUrl
+    Write-Color cyan "Searching for ref pack '$packageId' on '$feedName'..."
+
+    try {
+        $rawOutput = & dotnet package search $packageId --prerelease --format json --exact-match --source $feedUrl --take 500 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Color yellow "dotnet package search failed for '$packageId' on '$feedName' (exit code $LASTEXITCODE)"
+            return @()
+        }
+
+        $json = $rawOutput | Out-String | ConvertFrom-Json
+
+        if (-not $json.searchResult -or $json.searchResult.Count -eq 0) { return @() }
+
+        $source = $json.searchResult[0]
+        if (-not $source.packages -or $source.packages.Count -eq 0) { return @() }
+
+        $versions = @($source.packages | ForEach-Object { $_.version })
+        Write-Color cyan "  Found $($versions.Count) version(s) on '$feedName'"
+        return $versions
+    }
+    catch {
+        Write-Color yellow "dotnet package search error for '$packageId' on '$feedName': $_"
+        return @()
+    }
 }
 
 Function VerifyPathOrExit {
@@ -687,8 +694,8 @@ Function DownloadPackage {
     (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]
-        $nuGetFeed
+        [string[]]
+        $nuGetFeeds # Feeds to try in order (e.g., dotnet-public, dotnet11)
         ,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -732,22 +739,32 @@ Function DownloadPackage {
     RecreateFolder $destinationFolder
 
     $refPackageName = "$fullSdkName.Ref"
+    $resolvedFeed = $null
 
-    # Get service index and flat2 base URL (used for both version search and download)
-    $serviceIndex = Invoke-RestMethod -Uri $nuGetFeed
-    $flatContainer = $serviceIndex.resources | Where-Object { $_.'@type' -match 'PackageBaseAddress' } | Select-Object -First 1
-    $flatBaseUrl = If ($flatContainer) { $flatContainer.'@id' } Else { "" }
-
-    # If exact version is provided, use it directly
+    # If exact version is provided, find which feed has it
     If (-Not ([System.String]::IsNullOrWhiteSpace($version))) {
-        Write-Color cyan "Using exact package version: $version"
+        Write-Color cyan "Using exact ref pack version: $version"
+
+        foreach ($feed in $nuGetFeeds) {
+            $feedVersions = SearchRefPackVersions $refPackageName $feed
+            if ($feedVersions -contains $version) {
+                $resolvedFeed = $feed
+                Write-Color green "Found ref pack '$refPackageName' $version on $(GetFeedName $feed)"
+                break
+            }
+        }
+
+        if (-not $resolvedFeed) {
+            $feedNames = ($nuGetFeeds | ForEach-Object { GetFeedName $_ }) -join ", "
+            Write-Error "Exact version '$version' of ref pack '$refPackageName' not found on any feed ($feedNames)." -ErrorAction Stop
+        }
     }
     Else {
         If ([System.String]::IsNullOrWhiteSpace($releaseKind) -or [System.String]::IsNullOrWhiteSpace($previewNumberVersion)) {
             Write-Error "Either -version or both -releaseKind and -previewNumberVersion must be provided to DownloadPackage." -ErrorAction Stop
         }
 
-        # Search for the package version
+        # Build search pattern for version matching
         $searchTerm = ""
         If ($releaseKind -eq "ga") {
             $searchTerm = "$dotNetVersion.$previewNumberVersion"
@@ -756,85 +773,69 @@ Function DownloadPackage {
             $searchTerm = "$dotNetVersion.*-$releaseKind.$previewNumberVersion*"
         }
 
-        # Try flat2 (PackageBaseAddress) first — works reliably on all feeds including per-build shipping feeds
+        # Try each feed in order to find a matching ref pack version
         $version = ""
+        foreach ($feed in $nuGetFeeds) {
+            $feedVersions = SearchRefPackVersions $refPackageName $feed
+            $matching = @($feedVersions | Where-Object { $_ -like $searchTerm })
 
-        If ($flatBaseUrl) {
-            $pkgIdLower = $refPackageName.ToLower()
-            $versionsUrl = "$flatBaseUrl$pkgIdLower/index.json"
-            Write-Color cyan "Searching for package '$refPackageName' matching '$searchTerm' via flat2 in feed '$nuGetFeed'..."
-
-            try {
-                $versionsResult = Invoke-RestMethod -Uri $versionsUrl
-                $matchingVersions = @($versionsResult.versions | Where-Object { $_ -Like $searchTerm } | Sort-Object -Descending)
-
-                If ($matchingVersions.Count -gt 0) {
-                    $version = $matchingVersions[0]
-                    Write-Color green "Found version '$version' via flat2."
-                }
-            }
-            catch {
-                Write-Color yellow "Flat2 lookup failed for '$refPackageName': $_"
+            if ($matching.Count -gt 0) {
+                $version = $matching[0] # Already newest-first from dotnet package search
+                $resolvedFeed = $feed
+                Write-Color green "Found ref pack '$refPackageName' $version on $(GetFeedName $feed)"
+                break
             }
         }
 
-        # Fall back to SearchQueryService if flat2 didn't find a match
-        If ([System.String]::IsNullOrWhiteSpace($version)) {
-            Write-Color cyan "Searching for package '$refPackageName' matching '$searchTerm' via search in feed '$nuGetFeed'..."
-
-            $searchQueryService = $serviceIndex.resources | Where-Object { $_.'@type' -match 'SearchQueryService' } | Select-Object -First 1
-
-            if (-not $searchQueryService) {
-                Write-Error "Could not find SearchQueryService endpoint in feed '$nuGetFeed'" -ErrorAction Stop
-            }
-
-            $searchUrl = $searchQueryService.'@id'
-
-            $searchParams = @{
-                Uri = "$searchUrl`?q=$refPackageName&prerelease=true&take=1"
-            }
-
-            $searchResults = Invoke-RestMethod @searchParams
-
-            If (-not $searchResults.data -or $searchResults.data.Count -eq 0) {
-                Write-Error "No NuGet packages found with ref package name '$refPackageName' in feed '$nuGetFeed'" -ErrorAction Stop
-            }
-
-            $package = $searchResults.data | Where-Object { $_.id -eq $refPackageName } | Select-Object -First 1
-
-            If (-not $package) {
-                Write-Error "Package '$refPackageName' not found in search results" -ErrorAction Stop
-            }
-
-            # Filter versions matching search term
-            $matchingVersions = @($package.versions | Where-Object -Property version -Like $searchTerm | Sort-Object version -Descending)
-
-            If ($matchingVersions.Count -eq 0) {
-                Write-Error "No NuGet packages found with search term '$searchTerm'." -ErrorAction Stop
-            }
-
-            $version = $matchingVersions[0].version
+        if ([System.String]::IsNullOrWhiteSpace($version)) {
+            $feedNames = ($nuGetFeeds | ForEach-Object { GetFeedName $_ }) -join ", "
+            Write-Error "No version of ref pack '$refPackageName' matching '$searchTerm' found on any feed ($feedNames)." -ErrorAction Stop
         }
     }
 
+    # Download the nupkg using flat2 (PackageBaseAddress) — try resolved feed first, fall back to others
     $nupkgFile = [IO.Path]::Combine($tmpFolder, "$refPackageName.$version.nupkg")
+    $downloadFeed = $resolvedFeed
 
     If (-Not(Test-Path -Path $nupkgFile)) {
-        # Construct download URL using flat2 base URL from the service index
-        $pkgIdLower = $refPackageName.ToLower()
-        If ($flatBaseUrl) {
-            $nupkgUrl = "$flatBaseUrl$pkgIdLower/$version/$pkgIdLower.$version.nupkg"
-        }
-        Else {
-            Write-Error "Could not determine download URL for package '$refPackageName' version '$version'. No PackageBaseAddress endpoint found in feed '$nuGetFeed'." -ErrorAction Stop
+        # Build ordered list of feeds to try: resolved feed first, then remaining feeds
+        $feedsToTry = @($resolvedFeed) + @($nuGetFeeds | Where-Object { $_ -ne $resolvedFeed })
+        $downloaded = $false
+
+        foreach ($tryFeed in $feedsToTry) {
+            try {
+                $serviceIndex = Invoke-RestMethod -Uri $tryFeed
+                $flatContainer = $serviceIndex.resources | Where-Object { $_.'@type' -match 'PackageBaseAddress' } | Select-Object -First 1
+
+                If (-not $flatContainer) {
+                    Write-Color yellow "No PackageBaseAddress endpoint on $(GetFeedName $tryFeed). Trying next feed..."
+                    continue
+                }
+
+                $flatBaseUrl = $flatContainer.'@id'
+                $pkgIdLower = $refPackageName.ToLower()
+                $nupkgUrl = "$flatBaseUrl$pkgIdLower/$version/$pkgIdLower.$version.nupkg"
+
+                Write-Color yellow "Downloading ref pack '$nupkgUrl'..."
+                Invoke-WebRequest -Uri $nupkgUrl -OutFile $nupkgFile
+                VerifyPathOrExit $nupkgFile
+                $downloadFeed = $tryFeed
+                $downloaded = $true
+                break
+            }
+            catch {
+                Write-Color yellow "Download from $(GetFeedName $tryFeed) failed: $($_.Exception.Message). Trying next feed..."
+                if (Test-Path $nupkgFile) { Remove-Item $nupkgFile -Force }
+            }
         }
 
-        Write-Color yellow "Downloading '$nupkgUrl' to '$nupkgFile'..."
-        Invoke-WebRequest -Uri $nupkgUrl -OutFile $nupkgFile
-        VerifyPathOrExit $nupkgFile
+        if (-not $downloaded) {
+            $feedNames = ($feedsToTry | ForEach-Object { GetFeedName $_ }) -join ", "
+            Write-Error "Failed to download ref pack '$refPackageName' $version from any feed ($feedNames)." -ErrorAction Stop
+        }
     }
     Else {
-        Write-Color green "File '$nupkgFile' already exists locally. Skipping re-download."
+        Write-Color green "Ref pack '$nupkgFile' already exists locally. Skipping re-download."
     }
 
     Expand-Archive -Path $nupkgFile -DestinationPath $destinationFolder -ErrorAction Stop
@@ -843,6 +844,15 @@ Function DownloadPackage {
     VerifyPathOrExit $dllPath
     VerifyCountDlls $dllPath
     $resultingPath.value = $dllPath
+
+    # Track which feed and version was resolved for this ref pack download
+    $key = "${sdkName}_${beforeOrAfter}"
+    $script:RefPackResults[$key] = @{
+        RefPack = $refPackageName
+        Version = $version
+        Feed = $downloadFeed
+        FeedName = GetFeedName $downloadFeed
+    }
 }
 
 Function ProcessSdk
@@ -865,13 +875,8 @@ Function ProcessSdk
     ,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]
-        $previousNuGetFeed
-    ,
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $currentNuGetFeed
+        [string[]]
+        $nuGetFeeds # Feeds to try in order for ref pack resolution
     ,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -945,21 +950,21 @@ Function ProcessSdk
     $sdkCurrentVersion = If ($sdkName -eq "NETCore") { $currentVersion } Else { "" }
 
     $beforeDllFolder = ""
-    DownloadPackage -nuGetFeed $previousNuGetFeed -tmpFolder $tmpFolder -sdkName $sdkName -beforeOrAfter "Before" -dotNetVersion $previousMajorMinor -releaseKind $previousReleaseKind -previewNumberVersion $previousPreviewRCNumber -version $sdkPreviousVersion -resultingPath ([ref]$beforeDllFolder)
+    DownloadPackage -nuGetFeeds $nuGetFeeds -tmpFolder $tmpFolder -sdkName $sdkName -beforeOrAfter "Before" -dotNetVersion $previousMajorMinor -releaseKind $previousReleaseKind -previewNumberVersion $previousPreviewRCNumber -version $sdkPreviousVersion -resultingPath ([ref]$beforeDllFolder)
     VerifyPathOrExit $beforeDllFolder
 
     $afterDllFolder = ""
-    DownloadPackage -nuGetFeed $currentNuGetFeed -tmpFolder $tmpFolder -sdkName $sdkName -beforeOrAfter "After" -dotNetVersion $currentMajorMinor -releaseKind $currentReleaseKind -previewNumberVersion $currentPreviewRCNumber -version $sdkCurrentVersion -resultingPath ([ref]$afterDllFolder)
+    DownloadPackage -nuGetFeeds $nuGetFeeds -tmpFolder $tmpFolder -sdkName $sdkName -beforeOrAfter "After" -dotNetVersion $currentMajorMinor -releaseKind $currentReleaseKind -previewNumberVersion $currentPreviewRCNumber -version $sdkCurrentVersion -resultingPath ([ref]$afterDllFolder)
     VerifyPathOrExit $afterDllFolder
 
-    # For AspNetCore and WindowsDesktop, also download NETCore references to provide core assemblies
+    # For AspNetCore and WindowsDesktop, also download NETCore ref packs as core reference assemblies
     $beforeReferenceFolder = ""
     $afterReferenceFolder = ""
     if ($sdkName -eq "AspNetCore" -or $sdkName -eq "WindowsDesktop") {
-        DownloadPackage -nuGetFeed $previousNuGetFeed -tmpFolder $tmpFolder -sdkName "NETCore" -beforeOrAfter "Before" -dotNetVersion $previousMajorMinor -releaseKind $previousReleaseKind -previewNumberVersion $previousPreviewRCNumber -version $previousVersion -resultingPath ([ref]$beforeReferenceFolder)
+        DownloadPackage -nuGetFeeds $nuGetFeeds -tmpFolder $tmpFolder -sdkName "NETCore" -beforeOrAfter "Before" -dotNetVersion $previousMajorMinor -releaseKind $previousReleaseKind -previewNumberVersion $previousPreviewRCNumber -version $previousVersion -resultingPath ([ref]$beforeReferenceFolder)
         VerifyPathOrExit $beforeReferenceFolder
 
-        DownloadPackage -nuGetFeed $currentNuGetFeed -tmpFolder $tmpFolder -sdkName "NETCore" -beforeOrAfter "After" -dotNetVersion $currentMajorMinor -releaseKind $currentReleaseKind -previewNumberVersion $currentPreviewRCNumber -version $currentVersion -resultingPath ([ref]$afterReferenceFolder)
+        DownloadPackage -nuGetFeeds $nuGetFeeds -tmpFolder $tmpFolder -sdkName "NETCore" -beforeOrAfter "After" -dotNetVersion $currentMajorMinor -releaseKind $currentReleaseKind -previewNumberVersion $currentPreviewRCNumber -version $currentVersion -resultingPath ([ref]$afterReferenceFolder)
         VerifyPathOrExit $afterReferenceFolder
     }
 
@@ -1134,38 +1139,54 @@ $OriginalIsGAToGA = $IsComparingReleases
 
 # For cross-major GA-to-GA comparisons, resolve to the latest available version if GA is not yet published
 if ($IsComparingReleases) {
-    Write-Color cyan "Cross-major GA comparison ($PreviousMajorMinor -> $CurrentMajorMinor). Checking if $CurrentMajorMinor GA is available..."
-    try {
-        $serviceIdx = Invoke-RestMethod -Uri $CurrentNuGetFeed
-        $fc = $serviceIdx.resources | Where-Object { $_.'@type' -match 'PackageBaseAddress' } | Select-Object -First 1
-        if ($fc) {
-            $versionsResult = Invoke-RestMethod -Uri "$($fc.'@id')microsoft.netcore.app.ref/index.json"
-            $gaPattern = "$CurrentMajorMinor.0"
-            $gaExists = $versionsResult.versions -contains $gaPattern
+    Write-Color cyan "Cross-major GA comparison ($PreviousMajorMinor -> $CurrentMajorMinor). Checking if $CurrentMajorMinor GA ref packs are available..."
 
-            if (-not $gaExists) {
-                $mmVersions = @($versionsResult.versions | Where-Object { $_ -like "$CurrentMajorMinor.*" })
-                if ($mmVersions.Count -gt 0) {
-                    $latestVersion = $mmVersions[-1]
-                    $parsed = ParseVersionString $latestVersion "Current"
-                    if ($parsed.PrereleaseLabel) {
-                        Write-Color cyan "$CurrentMajorMinor GA not published yet. Using latest available: $latestVersion"
-                        $CurrentPrereleaseLabel = $parsed.PrereleaseLabel
-                        $currentParsed = ParsePrereleaseLabel $CurrentPrereleaseLabel
-                        $CurrentReleaseKind = $currentParsed.ReleaseKind
-                        $CurrentPreviewRCNumber = $currentParsed.PreviewRCNumber
-                        $IsComparingReleases = $false
-                    }
+    # Check across feeds for GA availability (dotnet-public first, then dotnet{MAJOR})
+    $gaFound = $false
+    $gaPattern = "$CurrentMajorMinor.0"
+    $currentMajorVersion = [int]($CurrentMajorMinor.Split(".")[0])
+    $feedsToCheck = if ($feedList.Count -gt 0) { $feedList } else { @($DotNetPublicFeedUrl, (ResolveFeedUrl "dotnet${currentMajorVersion}")) }
+
+    foreach ($checkFeed in $feedsToCheck) {
+        $versions = SearchRefPackVersions "Microsoft.NETCore.App.Ref" $checkFeed
+        if ($versions -contains $gaPattern) {
+            Write-Color green "$CurrentMajorMinor GA ref packs are available on $(GetFeedName $checkFeed)."
+            $gaFound = $true
+            break
+        }
+
+        if (-not $gaFound) {
+            # Try to find the latest preview/RC for this major on this feed
+            $mmVersions = @($versions | Where-Object { $_ -like "$CurrentMajorMinor.*" })
+            if ($mmVersions.Count -gt 0) {
+                $latestVersion = $mmVersions[0] # newest-first from dotnet package search
+                $parsed = ParseVersionString $latestVersion "Current"
+                if ($parsed.PrereleaseLabel) {
+                    Write-Color cyan "$CurrentMajorMinor GA not published yet. Using latest available ref pack: $latestVersion"
+                    $CurrentPrereleaseLabel = $parsed.PrereleaseLabel
+                    $currentParsed = ParsePrereleaseLabel $CurrentPrereleaseLabel
+                    $CurrentReleaseKind = $currentParsed.ReleaseKind
+                    $CurrentPreviewRCNumber = $currentParsed.PreviewRCNumber
+                    $IsComparingReleases = $false
+                    break
                 }
-            } else {
-                Write-Color green "$CurrentMajorMinor GA is available."
             }
         }
     }
-    catch {
-        Write-Color yellow "Could not probe for GA availability: $_"
-    }
 }
+
+## Build ref pack feed probe order for downloads (after version resolution so we know the major version)
+$downloadFeeds = @()
+if (-not [System.String]::IsNullOrWhiteSpace($NuGetFeeds)) {
+    $downloadFeeds = ($NuGetFeeds -split ',') | ForEach-Object { ResolveFeedUrl $_ }
+} else {
+    # Default: try dotnet-public first, then dotnet{MAJOR} for the current version
+    $currentMajorVersion = [int]($CurrentMajorMinor.Split(".")[0])
+    $dotnetMajorFeed = ResolveFeedUrl "dotnet${currentMajorVersion}"
+    $downloadFeeds = @($DotNetPublicFeedUrl, $dotnetMajorFeed)
+}
+$downloadFeedNames = ($downloadFeeds | ForEach-Object { GetFeedName $_ }) -join ", "
+Write-Color cyan "Ref pack feed probe order: $downloadFeedNames"
 
 ## Resolve exclude file paths relative to the script's directory if they are relative paths
 If (-not [System.IO.Path]::IsPathRooted($AttributesToExcludeFilePath)) {
@@ -1233,8 +1254,7 @@ If (-Not $ExcludeWindowsDesktop) { $sdksToProcess += "WindowsDesktop" }
 $commonParams = @{
     previewFolderPath = $previewFolderPath
     tmpFolder = $TmpFolder
-    previousNuGetFeed = $PreviousNuGetFeed
-    currentNuGetFeed = $CurrentNuGetFeed
+    nuGetFeeds = $downloadFeeds
     apiDiffExe = $apiDiffExe
     currentDotNetFullName = $currentDotNetFullName
     assembliesToExclude = $AssembliesToExcludeFilePath
@@ -1251,47 +1271,12 @@ $commonParams = @{
     currentVersion = $CurrentVersion
 }
 
-## Run the ApiDiff with feed fallback
-$feedUsed = $CurrentNuGetFeed
-$feedsToTry = if ($feedList.Count -gt 0) { $feedList } else { @($CurrentNuGetFeed) }
-$lastFeedError = $null
+## Initialize ref pack results tracking (populated by DownloadPackage)
+$script:RefPackResults = @{}
 
-ForEach ($tryFeed in $feedsToTry) {
-    $lastFeedError = $null
-
-    # Update feeds in params
-    $commonParams.previousNuGetFeed = $tryFeed
-    $commonParams.currentNuGetFeed = $tryFeed
-
-    # Create fresh temp folder for each attempt
-    $retryTmpFolder = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
-    New-Item -ItemType Directory -Path $retryTmpFolder | Out-Null
-    $commonParams.tmpFolder = $retryTmpFolder
-
-    # Clean output folder for retry
-    If (Test-Path -Path $previewFolderPath) {
-        Remove-Item -Recurse -Force $previewFolderPath
-    }
-    New-Item -ItemType Directory -Path $previewFolderPath | Out-Null
-
-    try {
-        ForEach ($sdk in $sdksToProcess) {
-            ProcessSdk -sdkName $sdk @commonParams
-        }
-        $feedUsed = $tryFeed
-        break
-    }
-    catch {
-        $lastFeedError = $_
-        Write-Color yellow "Feed '$tryFeed' failed: $($_.Exception.Message)"
-        if ($tryFeed -ne $feedsToTry[-1]) {
-            Write-Color yellow "Trying next feed..."
-        }
-    }
-}
-
-if ($lastFeedError) {
-    Write-Error "All NuGet feeds exhausted. Last error: $($lastFeedError.Exception.Message)" -ErrorAction Stop
+## Run the ApiDiff — each DownloadPackage call independently probes feeds
+ForEach ($sdk in $sdksToProcess) {
+    ProcessSdk -sdkName $sdk @commonParams
 }
 
 CreateReadme -previewFolderPath $previewFolderPath -dotNetFriendlyName $currentDotNetFriendlyName -dotNetFullName $currentDotNetFullName -sdkNames $sdksToProcess
@@ -1312,12 +1297,31 @@ if ($OutputFormat -eq "json") {
         $prTitle = "$previousDotNetFriendlyName -> $currentDotNetFriendlyName"
     }
 
+    # Build per-ref-pack details for PR description table
+    $refPackDetails = @()
+    foreach ($sdk in $sdksToProcess) {
+        $beforeKey = "${sdk}_Before"
+        $afterKey = "${sdk}_After"
+        $beforeInfo = $script:RefPackResults[$beforeKey]
+        $afterInfo = $script:RefPackResults[$afterKey]
+
+        if ($beforeInfo -and $afterInfo) {
+            $refPackDetails += [ordered]@{
+                ref_pack = $beforeInfo.RefPack
+                previous_version = $beforeInfo.Version
+                previous_feed = $beforeInfo.FeedName
+                current_version = $afterInfo.Version
+                current_feed = $afterInfo.FeedName
+            }
+        }
+    }
+
     $result = [ordered]@{
         status = "success"
         previous = $previousDotNetFriendlyName
         current = $currentDotNetFriendlyName
         is_release_to_release = $OriginalIsGAToGA
-        feed_used = $feedUsed
+        ref_packs = $refPackDetails
         branch_name = $branchName
         pr_title = $prTitle
     }
