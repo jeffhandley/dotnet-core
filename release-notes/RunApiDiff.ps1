@@ -1281,6 +1281,18 @@ ForEach ($sdk in $sdksToProcess) {
 
 CreateReadme -previewFolderPath $previewFolderPath -dotNetFriendlyName $currentDotNetFriendlyName -dotNetFullName $currentDotNetFullName -sdkNames $sdksToProcess
 
+## Normalize all generated markdown files to have exactly one trailing newline
+## (the apidiff tool sometimes emits extra trailing blank lines)
+$generatedMdFiles = Get-ChildItem -Path $previewFolderPath -Filter "*.md" -Recurse
+foreach ($mdFile in $generatedMdFiles) {
+    $content = [System.IO.File]::ReadAllText($mdFile.FullName)
+    $normalized = $content.TrimEnd("`r", "`n") + "`n"
+    if ($content -ne $normalized) {
+        [System.IO.File]::WriteAllText($mdFile.FullName, $normalized)
+        Write-Color cyan "Normalized trailing newline: $($mdFile.Name)"
+    }
+}
+
 ## Write JSON output if requested
 if ($OutputFormat -eq "json") {
     # Compute branch name and PR title for metadata
