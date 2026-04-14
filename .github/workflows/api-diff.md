@@ -188,7 +188,7 @@ engine:
 
 # Produce one API diff PR
 
-Use `release-notes/ApiDiff-CollectAssemblies.ps1` to collect reference assemblies and then call the `generate_api_diff` MCP tool to generate exactly one API diff comparison. Create or refresh the matching pull request using the configured safe outputs. You may consult `@.github/skills/api-diff` as a reference for parameter mapping.
+Use `release-notes/RunApiDiff-CollectAssemblies.ps1` to collect reference assemblies and then call the `generate_api_diff` MCP tool to generate exactly one API diff comparison. Create or refresh the matching pull request using the configured safe outputs. You may consult `@.github/skills/api-diff` as a reference for parameter mapping.
 
 ## Operating rules
 
@@ -229,7 +229,7 @@ Use `release-notes/ApiDiff-CollectAssemblies.ps1` to collect reference assemblie
 
 ## Generation steps
 
-**Important:** Do not manually query or interpret NuGet feed contents. The `ApiDiff-CollectAssemblies.ps1` script handles all version resolution, feed querying, and package downloading. Trust its output. Daily NuGet feeds contain many build versions (alpha, preview, rc) — do not attempt to analyze feed listings yourself.
+**Important:** Do not manually query or interpret NuGet feed contents. The `RunApiDiff-CollectAssemblies.ps1` script handles all version resolution, feed querying, and package downloading. Trust its output. Daily NuGet feeds contain many build versions (alpha, preview, rc) — do not attempt to analyze feed listings yourself.
 
 ### Step 1 — Read and validate inputs
 
@@ -238,7 +238,7 @@ Use `release-notes/ApiDiff-CollectAssemblies.ps1` to collect reference assemblie
 
 ### Step 2 — Collect assemblies
 
-Run `release-notes/ApiDiff-CollectAssemblies.ps1` to resolve versions, download reference packages, and produce a JSON manifest on stdout.
+Run `release-notes/RunApiDiff-CollectAssemblies.ps1` to resolve versions, download reference packages, and produce a JSON manifest on stdout.
 
 - **When all four inputs are empty (inferred run):** run with no version parameters.
 - **When all four inputs are provided (explicit run):** map the `API_DIFF_*` environment variable values to script parameters.
@@ -250,17 +250,17 @@ Command shapes:
 
 ```powershell
 # Inferred — no version parameters
-pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1
+pwsh -File ./release-notes/RunApiDiff-CollectAssemblies.ps1
 
 # Explicit — with mapped inputs
-pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1 `
+pwsh -File ./release-notes/RunApiDiff-CollectAssemblies.ps1 `
   -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
   -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
   [-PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_NOT_GA}] `
   [-CurrentPrereleaseLabel {CURRENT_LABEL_IF_NOT_GA}]
 
 # Major-to-major with ga previous and * current (latest on dotnet-public)
-pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1 `
+pwsh -File ./release-notes/RunApiDiff-CollectAssemblies.ps1 `
   -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
   -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
   -CurrentPrereleaseLabel *
@@ -271,7 +271,7 @@ Set an initial wait of at least 300 seconds — the script takes several minutes
 **Feed fallback for preview-to-preview runs:** if the script fails because the target preview is not yet available on `dotnet-public`, retry exactly once with the daily feed override. The feed URL pattern is `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json` where `{MAJOR}` is the major version number of the current release line. Add `-CurrentNuGetFeed` to the same command:
 
 ```powershell
-pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1 `
+pwsh -File ./release-notes/RunApiDiff-CollectAssemblies.ps1 `
   -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
   -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
   [-PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_NOT_GA}] `

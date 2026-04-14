@@ -1,10 +1,10 @@
-﻿# Resolves .NET versions, downloads NuGet reference packages, and extracts
+# Resolves .NET versions, downloads NuGet reference packages, and extracts
 # reference assemblies to disk.  Outputs a JSON manifest to stdout describing
 # the before/after assembly paths for each SDK, ready for consumption by
-# ApiDiff-GenerateReport.ps1 or an MCP-based API-diff tool.
+# RunApiDiff-GenerateReport.ps1 or an MCP-based API-diff tool.
 #
 # This script is one half of the former RunApiDiff.ps1; the other half is
-# ApiDiff-GenerateReport.ps1.  Use ApiDiff.ps1 to run both steps together.
+# RunApiDiff-GenerateReport.ps1.  Use RunApiDiff.ps1 to run both steps together.
 
 Param (
     [Parameter(Mandatory = $false)]

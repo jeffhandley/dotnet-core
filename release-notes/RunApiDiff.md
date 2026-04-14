@@ -6,7 +6,7 @@ There are three ways to generate API diffs:
 
 | Method | When to use |
 |--------|-------------|
-| [**Command-line script**](#command-line-usage) | Manual local generation using `ApiDiff.ps1` |
+| [**Command-line script**](#command-line-usage) | Manual local generation using `RunApiDiff.ps1` |
 | [**Copilot skill**](#agentic-usage-with-copilot) | Interactive Copilot sessions using the `api-diff` skill with the apidiff MCP server |
 | [**Agentic workflow**](#automated-workflow) | Scheduled and on-demand automation that keeps API diff PRs current |
 
@@ -14,7 +14,7 @@ Example output: [API diff between .NET 10 GA and .NET 11 Preview 1 (dotnet/core#
 
 ## Command-line usage
 
-The `ApiDiff.ps1` script runs the full pipeline locally: it resolves versions, downloads NuGet reference packages, runs the `apidiff` console tool, and writes the markdown reports.
+The `RunApiDiff.ps1` script runs the full pipeline locally: it resolves versions, downloads NuGet reference packages, runs the `apidiff` console tool, and writes the markdown reports.
 
 ### Prerequisites
 
@@ -32,30 +32,30 @@ dotnet tool install --global Microsoft.DotNet.ApiDiff.Tool \
 When run with no arguments, the script infers the next version to diff by scanning existing `api-diff` folders in the repository.
 
 ```powershell
-.\release-notes\ApiDiff.ps1
+.\release-notes\RunApiDiff.ps1
 ```
 
 ### Examples
 
 ```powershell
 # Infer versions automatically
-.\release-notes\ApiDiff.ps1
+.\release-notes\RunApiDiff.ps1
 
 # Specify only the current version; previous is inferred
-.\release-notes\ApiDiff.ps1 -CurrentMajorMinor 11.0 -CurrentPrereleaseLabel preview.2
+.\release-notes\RunApiDiff.ps1 -CurrentMajorMinor 11.0 -CurrentPrereleaseLabel preview.2
 
 # Specify both versions explicitly
-.\release-notes\ApiDiff.ps1 `
+.\release-notes\RunApiDiff.ps1 `
    -PreviousMajorMinor 10.0 -PreviousPrereleaseLabel preview.7 `
    -CurrentMajorMinor 10.0 -CurrentPrereleaseLabel rc.1
 
 # Use exact NuGet package versions
-.\release-notes\ApiDiff.ps1 `
+.\release-notes\RunApiDiff.ps1 `
    -PreviousVersion "10.0.0-preview.7.25380.108" `
    -CurrentVersion "10.0.0-rc.1.25451.107"
 
 # Use a custom feed for the current version's packages
-.\release-notes\ApiDiff.ps1 `
+.\release-notes\RunApiDiff.ps1 `
    -CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet11/nuget/v3/index.json"
 ```
 
@@ -99,28 +99,28 @@ When no version information is provided, the script scans existing `api-diff` fo
 
 ### Script architecture
 
-`ApiDiff.ps1` is a composition of two sub-scripts that can also be run independently:
+`RunApiDiff.ps1` is a composition of two sub-scripts that can also be run independently:
 
 | Script | Purpose |
 |--------|---------|
-| `ApiDiff-CollectAssemblies.ps1` | Resolves versions, downloads NuGet packages, extracts reference assemblies, and emits a JSON manifest to stdout |
-| `ApiDiff-GenerateReport.ps1` | Reads the JSON manifest and invokes the `apidiff` console tool to produce markdown reports |
+| `RunApiDiff-CollectAssemblies.ps1` | Resolves versions, downloads NuGet packages, extracts reference assemblies, and emits a JSON manifest to stdout |
+| `RunApiDiff-GenerateReport.ps1` | Reads the JSON manifest and invokes the `apidiff` console tool to produce markdown reports |
 
 Running the steps individually:
 
 ```powershell
 # Step 1: Collect assemblies — outputs JSON manifest
-.\release-notes\ApiDiff-CollectAssemblies.ps1 -CurrentMajorMinor 11.0 -CurrentPrereleaseLabel preview.3 > manifest.json
+.\release-notes\RunApiDiff-CollectAssemblies.ps1 -CurrentMajorMinor 11.0 -CurrentPrereleaseLabel preview.3 > manifest.json
 
 # Step 2: Generate reports from the manifest
-.\release-notes\ApiDiff-GenerateReport.ps1 -InputFile manifest.json -InstallApiDiff
+.\release-notes\RunApiDiff-GenerateReport.ps1 -InputFile manifest.json -InstallApiDiff
 ```
 
 ## Agentic usage with Copilot
 
 When working with Copilot in an environment that has the **apidiff MCP server** available, the `api-diff` skill uses a two-step approach:
 
-1. **Collect assemblies** — `ApiDiff-CollectAssemblies.ps1` downloads reference packages and produces a JSON manifest
+1. **Collect assemblies** — `RunApiDiff-CollectAssemblies.ps1` downloads reference packages and produces a JSON manifest
 2. **Generate reports via MCP** — the `generate_api_diff` MCP tool processes each SDK using assembly paths from the manifest
 
 This avoids the need to install the `apidiff` dotnet tool locally. The MCP server includes built-in `release-notes` exclusion sets that match the `ApiDiffAssembliesToExclude.txt` and `ApiDiffAttributesToExclude.txt` files.

@@ -8,10 +8,10 @@ disable-model-invocation: true
 
 Generate an API diff in two steps:
 
-1. Run `release-notes/ApiDiff-CollectAssemblies.ps1` to download reference assemblies and produce a JSON manifest
+1. Run `release-notes/RunApiDiff-CollectAssemblies.ps1` to download reference assemblies and produce a JSON manifest
 2. Call the `generate_api_diff` MCP tool for each SDK in the manifest to produce markdown reports
 
-See [release-notes/ApiDiff.md](../../../release-notes/ApiDiff.md) for the full parameter reference for the collection script.
+See [release-notes/RunApiDiff.md](../../../release-notes/RunApiDiff.md) for the full parameter reference for the collection script.
 
 When no versions are mentioned, run with no parameters — the script auto-infers versions.
 
@@ -37,7 +37,7 @@ When no versions are mentioned, run with no parameters — the script auto-infer
 ## Step 1: Collect assemblies
 
 ```powershell
-pwsh -File ./release-notes/ApiDiff-CollectAssemblies.ps1 [mapped parameters]
+pwsh -File ./release-notes/RunApiDiff-CollectAssemblies.ps1 [mapped parameters]
 ```
 
 Set an initial wait of at least 300 seconds — the script takes several minutes. Capture the JSON output; it contains the assembly paths and metadata needed for step 2.

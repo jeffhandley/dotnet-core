@@ -1,9 +1,9 @@
-﻿# Reads a JSON manifest (from ApiDiff-CollectAssemblies.ps1) and invokes the
+# Reads a JSON manifest (from RunApiDiff-CollectAssemblies.ps1) and invokes the
 # apidiff console tool for each SDK to generate markdown API-diff reports.
 # Also creates the summary README.md in the output folder.
 #
 # This script is one half of the former RunApiDiff.ps1; the other half is
-# ApiDiff-CollectAssemblies.ps1.  Use ApiDiff.ps1 to run both steps together.
+# RunApiDiff-CollectAssemblies.ps1.  Use RunApiDiff.ps1 to run both steps together.
 
 Param (
     [Parameter(Mandatory = $false, ValueFromPipeline = $true)]

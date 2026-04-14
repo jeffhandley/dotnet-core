@@ -1,8 +1,8 @@
-﻿# Generates an API comparison report between two .NET versions by collecting
+# Generates an API comparison report between two .NET versions by collecting
 # reference assemblies and then running the apidiff tool.
 #
-# This is a composition of ApiDiff-CollectAssemblies.ps1 (version resolution,
-# NuGet package download, assembly extraction) and ApiDiff-GenerateReport.ps1
+# This is a composition of RunApiDiff-CollectAssemblies.ps1 (version resolution,
+# NuGet package download, assembly extraction) and RunApiDiff-GenerateReport.ps1
 # (apidiff tool invocation and README creation).
 #
 # All parameters are forwarded to the sub-scripts as appropriate.
@@ -14,7 +14,7 @@
 
 # Usage:
 
-# ApiDiff.ps1
+# RunApiDiff.ps1
 # -PreviousMajorMinor           : The 'before' .NET version: '6.0', '7.0', '8.0', etc.
 # -PreviousPrereleaseLabel      : The prerelease label for the 'before' version (e.g., "preview.7", "rc.1"). Omit for GA.
 # -CurrentMajorMinor            : The 'after' .NET version: '6.0', '7.0', '8.0', etc.
@@ -33,13 +33,13 @@
 # -CurrentVersion               : Optional exact package version for the current/after comparison.
 
 # Example — simplest usage (infers next version from existing api-diffs):
-# .\ApiDiff.ps1
+# .\RunApiDiff.ps1
 
 # Example — explicit current version:
-# .\ApiDiff.ps1 -CurrentMajorMinor 11.0 -CurrentPrereleaseLabel preview.1
+# .\RunApiDiff.ps1 -CurrentMajorMinor 11.0 -CurrentPrereleaseLabel preview.1
 
 # Example with exact package versions:
-# .\ApiDiff.ps1 -PreviousVersion "10.0.0-preview.7.25380.108" -CurrentVersion "10.0.0-rc.1.25451.107"
+# .\RunApiDiff.ps1 -PreviousVersion "10.0.0-preview.7.25380.108" -CurrentVersion "10.0.0-rc.1.25451.107"
 
 Param (
     [Parameter(Mandatory = $false)]
@@ -120,8 +120,8 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 }
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$collectScript = [IO.Path]::Combine($scriptDir, "ApiDiff-CollectAssemblies.ps1")
-$reportScript = [IO.Path]::Combine($scriptDir, "ApiDiff-GenerateReport.ps1")
+$collectScript = [IO.Path]::Combine($scriptDir, "RunApiDiff-CollectAssemblies.ps1")
+$reportScript = [IO.Path]::Combine($scriptDir, "RunApiDiff-GenerateReport.ps1")
 
 If (-not (Test-Path $collectScript)) {
     Write-Error "Cannot find '$collectScript'." -ErrorAction Stop
