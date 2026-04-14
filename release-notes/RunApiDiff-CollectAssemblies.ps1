@@ -243,13 +243,14 @@ Function GetNextVersionFromFeed {
         Return ($candidates | Sort-Object { $_.Weight } | Select-Object -First 1)
     }
 
-    # No newer milestone found on the same major — try the next major
+    # No newer milestone found on the same major — try the next major on its own feed
     $nextMajor = [int]($majorMinor.Split(".")[0]) + 1
     $nextMajorMinor = "$nextMajor.0"
+    $nextMajorFeedUrl = ResolveFeedUrl "dotnet$nextMajor"
 
-    Write-Color cyan "No newer milestone found for $majorMinor on feed. Probing for $nextMajorMinor..."
+    Write-Color cyan "No newer milestone found for $majorMinor on feed. Probing dotnet$nextMajor for $nextMajorMinor..."
 
-    $nextVersions = SearchRefPackVersions "Microsoft.NETCore.App.Ref" $feedUrl
+    $nextVersions = SearchRefPackVersions "Microsoft.NETCore.App.Ref" $nextMajorFeedUrl
     ForEach ($v in $nextVersions) {
         $parsed = $null
         try { $parsed = ParseVersionString $v "probe" } catch { Continue }
@@ -748,8 +749,11 @@ If ([System.String]::IsNullOrWhiteSpace($CurrentMajorMinor) -and [System.String]
         $latestDesc = If ($latestApiDiff.PrereleaseLabel) { "$($latestApiDiff.MajorMinor)-$($latestApiDiff.PrereleaseLabel)" } Else { "$($latestApiDiff.MajorMinor) GA" }
         Write-Color cyan "Latest existing api-diff: $latestDesc"
 
-        # Probe the feed for the next version after the latest api-diff
-        $next = GetNextVersionFromFeed -majorMinor $latestApiDiff.MajorMinor -prereleaseLabel $latestApiDiff.PrereleaseLabel -feedUrl $DotNetPublicFeedUrl
+        # Discover next milestone from the dotnet{MAJOR} feed (unreleased versions live here)
+        $discoveryMajor = [int]($latestApiDiff.MajorMinor.Split(".")[0])
+        $discoveryFeedUrl = ResolveFeedUrl "dotnet$discoveryMajor"
+
+        $next = GetNextVersionFromFeed -majorMinor $latestApiDiff.MajorMinor -prereleaseLabel $latestApiDiff.PrereleaseLabel -feedUrl $discoveryFeedUrl
 
         If ($next) {
             $CurrentMajorMinor = $next.MajorMinor
@@ -757,7 +761,7 @@ If ([System.String]::IsNullOrWhiteSpace($CurrentMajorMinor) -and [System.String]
             $nextDesc = If ($CurrentPrereleaseLabel) { "$CurrentMajorMinor-$CurrentPrereleaseLabel" } Else { "$CurrentMajorMinor GA" }
             Write-Color green "Discovered next version from feed: $nextDesc"
         } Else {
-            Write-Error "Could not discover the next version from feed '$DotNetPublicFeedUrl' after $latestDesc. Specify -CurrentMajorMinor and -CurrentPrereleaseLabel explicitly." -ErrorAction Stop
+            Write-Error "Could not discover the next version from dotnet$discoveryMajor feed after $latestDesc. Specify -CurrentMajorMinor and -CurrentPrereleaseLabel explicitly." -ErrorAction Stop
         }
 
         # Also infer previous from the latest api-diff if not explicitly provided
@@ -842,8 +846,9 @@ If ($PreviousMajorMinor -eq $CurrentMajorMinor -and $PreviousPrereleaseLabel -eq
 # True when comparing releases across major versions (ga or * on both sides)
 $IsComparingReleases = ($PreviousMajorMinor -Ne $CurrentMajorMinor) -And ($PreviousReleaseKind -In @("ga", "*")) -And ($CurrentReleaseKind -In @("ga", "*"))
 
-## Build per-side feed probe arrays
-## Each side tries dotnet-public first, then falls back to the dotnet{MAJOR} feed.
+## Build per-side download feed probe arrays
+## Once a milestone is known (specified or discovered), try dotnet-public first
+## (released packages are authoritative there), then fall back to dotnet{MAJOR}.
 ## For cross-major comparisons, the dotnet{MAJOR} feed differs between sides.
 $previousMajorVersion = [int]($PreviousMajorMinor.Split(".")[0])
 $currentMajorVersion = [int]($CurrentMajorMinor.Split(".")[0])
@@ -851,7 +856,6 @@ $currentMajorVersion = [int]($CurrentMajorMinor.Split(".")[0])
 $previousDotNetMajorFeed = ResolveFeedUrl "dotnet$previousMajorVersion"
 $currentDotNetMajorFeed = ResolveFeedUrl "dotnet$currentMajorVersion"
 
-# Feed probe order: dotnet-public first (released packages), then dotnet{MAJOR} (daily builds / unreleased)
 $previousDownloadFeeds = @($DotNetPublicFeedUrl, $previousDotNetMajorFeed) | Select-Object -Unique
 $currentDownloadFeeds = @($DotNetPublicFeedUrl, $currentDotNetMajorFeed) | Select-Object -Unique
 
