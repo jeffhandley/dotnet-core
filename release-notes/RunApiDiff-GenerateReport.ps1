@@ -247,6 +247,17 @@ VerifyPathOrExit $outputPath
 VerifyPathOrExit $assembliesToExclude
 VerifyPathOrExit $attributesToExclude
 
+## Ensure dotnet global tools directory is on PATH
+$toolsDir = If ($IsWindows -or $env:OS -eq "Windows_NT") {
+    [IO.Path]::Combine($env:USERPROFILE, ".dotnet", "tools")
+} Else {
+    [IO.Path]::Combine($env:HOME, ".dotnet", "tools")
+}
+If ($env:PATH -notlike "*$toolsDir*") {
+    $env:PATH = "$toolsDir$([IO.Path]::PathSeparator)$env:PATH"
+    Write-Color yellow "Added $toolsDir to PATH"
+}
+
 ## Install or verify the apidiff tool
 $transportFeedUrl = "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet${currentMajorVersion}-transport/nuget/v3/index.json"
 $InstallApiDiffCommand = "dotnet tool install --global Microsoft.DotNet.ApiDiff.Tool --source $transportFeedUrl --prerelease"
@@ -254,7 +265,11 @@ $InstallApiDiffCommand = "dotnet tool install --global Microsoft.DotNet.ApiDiff.
 if ($InstallApiDiff) {
     Write-Color white "Installing ApiDiff tool..."
     Write-Color yellow $InstallApiDiffCommand
-    & dotnet tool install --global Microsoft.DotNet.ApiDiff.Tool --source $transportFeedUrl --prerelease
+    # Try update first (handles already-installed case), then install as fallback
+    & dotnet tool update --global Microsoft.DotNet.ApiDiff.Tool --source $transportFeedUrl --prerelease 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        & dotnet tool install --global Microsoft.DotNet.ApiDiff.Tool --source $transportFeedUrl --prerelease
+    }
 }
 
 $apiDiffCommand = get-command "apidiff" -ErrorAction SilentlyContinue

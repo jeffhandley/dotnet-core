@@ -1,6 +1,6 @@
 ---
 name: api-diff
-description: Generate an API comparison report between two .NET versions using the apidiff MCP server. Invoke when the user asks to run, create, or generate an API diff.
+description: Generate an API comparison report between two .NET versions using the RunApiDiff scripts. Invoke when the user asks to run, create, or generate an API diff.
 disable-model-invocation: true
 ---
 
@@ -9,7 +9,7 @@ disable-model-invocation: true
 Generate an API diff in two steps:
 
 1. Run `release-notes/RunApiDiff-CollectAssemblies.ps1` to download reference assemblies and produce a JSON manifest
-2. Call the `generate_api_diff` MCP tool for each SDK in the manifest to produce markdown reports
+2. Run `release-notes/RunApiDiff-GenerateReport.ps1` with the manifest to generate markdown reports
 
 See [release-notes/RunApiDiff.md](../../../release-notes/RunApiDiff.md) for the full parameter reference for the collection script.
 
@@ -42,28 +42,14 @@ pwsh -File ./release-notes/RunApiDiff-CollectAssemblies.ps1 [mapped parameters]
 
 Set an initial wait of at least 300 seconds — the script takes several minutes. Capture the JSON output; it contains the assembly paths and metadata needed for step 2.
 
-## Step 2: Generate reports via MCP tool
+## Step 2: Generate reports
 
-Parse the JSON manifest output. For each SDK entry in `sdks`, call the `generate_api_diff` MCP tool with:
+Save the JSON manifest from Step 1 to a temporary file, then run:
 
-- `beforePath` / `afterPath` — from the SDK entry
-- `beforeLabel` / `afterLabel` — from the manifest root
-- `refBeforePath` / `refAfterPath` — from the SDK entry (omit when null)
-- `outputPath` — `{manifest.outputPath}/Microsoft.{sdk.name}.App`
-- `tableOfContentsTitle` — from the manifest root
-- `assemblyExclusionSets` — `["release-notes"]`
-- `attributeExclusionSets` — `["release-notes"]`
-
-## Step 3: Create README
-
-Create `{manifest.outputPath}/README.md`:
-
-```markdown
-# {afterLabel} API Changes
-
-The following API changes were made in {afterLabel}:
-
-- [Microsoft.{sdk.name}.App](./Microsoft.{sdk.name}.App/{tableOfContentsTitle}.md)
+```bash
+pwsh -File ./release-notes/RunApiDiff-GenerateReport.ps1 -InstallApiDiff -InputFile /tmp/api-diff-manifest.json
 ```
 
-One bullet per SDK entry. After completion, summarize the results: how many diff files were generated and where.
+Set an initial wait of at least 300 seconds. The script installs the `apidiff` CLI tool, generates diff reports for each SDK, creates the summary README.md, and normalizes trailing newlines.
+
+After completion, summarize the results: how many diff files were generated and where.

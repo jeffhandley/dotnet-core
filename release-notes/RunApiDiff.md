@@ -7,7 +7,7 @@ There are three ways to generate API diffs:
 | Method | When to use |
 |--------|-------------|
 | [**Command-line script**](#command-line-usage) | Manual local generation using `RunApiDiff.ps1` |
-| [**Copilot skill**](#agentic-usage-with-copilot) | Interactive Copilot sessions using the `api-diff` skill with the apidiff MCP server |
+| [**Copilot skill**](#agentic-usage-with-copilot) | Interactive Copilot sessions using the `api-diff` skill |
 | [**Agentic workflow**](#automated-workflow) | Scheduled and on-demand automation that keeps API diff PRs current |
 
 Example output: [API diff between .NET 10 GA and .NET 11 Preview 1 (dotnet/core#10240)](https://github.com/dotnet/core/pull/10240/changes)
@@ -118,16 +118,14 @@ Running the steps individually:
 
 ## Agentic usage with Copilot
 
-When working with Copilot in an environment that has the **apidiff MCP server** available, the `api-diff` skill uses a two-step approach:
+When working with Copilot, the `api-diff` skill uses a two-step approach:
 
 1. **Collect assemblies** — `RunApiDiff-CollectAssemblies.ps1` downloads reference packages and produces a JSON manifest
-2. **Generate reports via MCP** — the `generate_api_diff` MCP tool processes each SDK using assembly paths from the manifest
+2. **Generate reports** — `RunApiDiff-GenerateReport.ps1` installs the `apidiff` tool, processes each SDK, creates the README, and normalizes trailing newlines
 
-This avoids the need to install the `apidiff` dotnet tool locally. The MCP server includes built-in `release-notes` exclusion sets that match the `ApiDiffAssembliesToExclude.txt` and `ApiDiffAttributesToExclude.txt` files.
+### MCP server (optional)
 
-### MCP server
-
-The apidiff MCP server is available as the `Microsoft.DotNet.ApiDiff.Mcp` NuGet package on the same transport feed as the dotnet tool:
+The apidiff MCP server is also available as an alternative to `RunApiDiff-GenerateReport.ps1`. It is available as the `Microsoft.DotNet.ApiDiff.Mcp` NuGet package on the same transport feed as the dotnet tool:
 
 ```text
 https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}-transport/nuget/v3/index.json
