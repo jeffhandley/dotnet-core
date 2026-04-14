@@ -268,16 +268,7 @@ pwsh -File ./release-notes/RunApiDiff-CollectAssemblies.ps1 `
 
 Set an initial wait of at least 300 seconds — the script takes several minutes to download and extract packages.
 
-**Feed fallback for preview-to-preview runs:** if the script fails because the target preview is not yet available on `dotnet-public`, retry exactly once with the daily feed override. The feed URL pattern is `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json` where `{MAJOR}` is the major version number of the current release line. Add `-CurrentNuGetFeed` to the same command:
-
-```powershell
-pwsh -File ./release-notes/RunApiDiff-CollectAssemblies.ps1 `
-  -PreviousMajorMinor {PREVIOUS_MAJOR_MINOR} `
-  -CurrentMajorMinor {CURRENT_MAJOR_MINOR} `
-  [-PreviousPrereleaseLabel {PREVIOUS_LABEL_IF_NOT_GA}] `
-  [-CurrentPrereleaseLabel {CURRENT_LABEL_IF_NOT_GA}] `
-  -CurrentNuGetFeed "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet{MAJOR}/nuget/v3/index.json"
-```
+The script automatically probes `dotnet-public` first and falls back to `dotnet{MAJOR}` (e.g., `dotnet11`) for each side independently. Do not manually retry with `-CurrentNuGetFeed` or `-PreviousNuGetFeed` overrides — the script handles feed resolution internally.
 
 ### Step 3 — Generate API diff reports
 
@@ -287,6 +278,7 @@ Parse the JSON manifest from the script output. The manifest contains:
 - `tableOfContentsTitle` — filename prefix for per-assembly reports
 - `outputPath` — absolute path to the api-diff output directory
 - `sdks` — array of SDK entries, each with `name`, `beforePath`, `afterPath`, and optional `refBeforePath` / `refAfterPath`
+- `refPacks` — array of ref pack resolution details, each with `name`, `beforeFeed`, `afterFeed`
 
 For each SDK entry in the manifest's `sdks` array, call the `generate_api_diff` MCP tool with:
 
@@ -311,6 +303,16 @@ The following API changes were made in {afterLabel}:
 ```
 
 Include one bullet per SDK entry in the manifest.
+
+### Step 4.5 — Normalize trailing newlines
+
+After generating API diff reports and creating the README, normalize all generated markdown files to ensure each ends with exactly one trailing newline (no blank lines at EOF). This prevents markdown lint errors:
+
+```bash
+find {outputPath} -name '*.md' -exec sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' {} \;
+# Then ensure each file ends with exactly one newline
+find {outputPath} -name '*.md' -exec bash -c 'printf "\n" >> "$1"' _ {} \;
+```
 
 ### Step 5 — Create or refresh the pull request
 
@@ -342,7 +344,7 @@ Before finishing, append a concise markdown report to `summary_file="${GITHUB_ST
 
 - the resolved previous/current comparison for this run
 - whether the run used explicit inputs or inferred the next milestone
-- whether generation stayed on `dotnet-public` or had to fall back to `dotnet{MAJOR}` for the next preview comparison
+- a ref pack feed resolution table (from the manifest's `refPacks` array) showing which feed each ref pack was resolved from for each side
 - whether it created a PR, refreshed an existing draft PR, skipped a non-draft PR, or no-op'd
 - the explicit `noop` reason when no PR action was taken
 - whether there were no file changes, the diff already existed on `main`, or generation was blocked by network/package access
@@ -358,8 +360,16 @@ Maintain at most one open automation PR per target API diff comparison.
 - For major-to-major PRs, the PR description must clearly separate the requested comparison from the resolved version:
   - **Requested comparison:** `.NET 10.0 GA -> .NET 11.0 (latest on dotnet-public)`
   - **Resolved current version:** the specific version from the manifest's `afterLabel` (e.g., `.NET 11.0 Preview 3` or `.NET 11.0 RC 2`)
-  - **Feed used:** whether the current-side version was resolved from `dotnet-public` or a daily build feed
   - Do not embed the resolved version in a way that could be confused with the canonical comparison pair.
+- The PR body must include a **ref pack feed resolution table** built from the manifest's `refPacks` array:
+
+  | Ref Pack | Previous Feed | Current Feed |
+  |----------|--------------|--------------|
+  | Microsoft.NETCore.App.Ref | dotnet-public | dotnet11 |
+  | Microsoft.AspNetCore.App.Ref | dotnet-public | dotnet11 |
+  | Microsoft.WindowsDesktop.App.Ref | dotnet-public | dotnet11 |
+
+  This table must be highly visible in the PR description — not embedded in prose.
 - The PR body should briefly summarize what comparison was generated and list the affected owners or contributors in a format similar to the historical API diff PRs.
 - Restrict the patch to files matching these globs only:
   - `release-notes/**/api-diff/**.md`

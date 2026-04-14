@@ -298,6 +298,18 @@ $sdkNames = @($manifest.sdks | ForEach-Object { $_.name })
 
 CreateReadme -previewFolderPath $outputPath -dotNetFriendlyName $afterLabel -dotNetFullName $tableOfContentsTitle -sdkNames $sdkNames
 
+## Normalize trailing newlines in all generated markdown files
+## Ensures each .md file ends with exactly one newline (no blank lines at EOF)
+$mdFiles = Get-ChildItem -Path $outputPath -Filter "*.md" -Recurse
+ForEach ($mdFile in $mdFiles) {
+    $content = [System.IO.File]::ReadAllText($mdFile.FullName)
+    $normalized = $content.TrimEnd("`r", "`n") + "`n"
+    If ($content -ne $normalized) {
+        [System.IO.File]::WriteAllText($mdFile.FullName, $normalized)
+        Write-Color yellow "Normalized trailing newline: $($mdFile.Name)"
+    }
+}
+
 Write-Color green "API diff report generation complete. Output: $outputPath"
 
 #####################
