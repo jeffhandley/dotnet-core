@@ -60,8 +60,8 @@ safe-outputs:
 if: github.event_name == 'workflow_dispatch' || !github.event.repository.fork
 
 concurrency:
-  group: api-diff-${{ inputs.previous_major_minor || 'inferred' }}-${{ inputs.previous_label || 'inferred' }}-${{ inputs.current_major_minor || 'inferred' }}-${{ inputs.current_label || 'inferred' }}
-  cancel-in-progress: true
+  group: api-diff-${{ github.run_id }}
+  cancel-in-progress: false
 
 timeout-minutes: 120
 
