@@ -20,8 +20,8 @@ safe-outputs:
     draft: true
     max: 5
   push-to-pull-request-branch:
-    title-prefix: "[release-notes] "
-    labels: [area-release-notes, automation]
+    required-title-prefix: "[release-notes] "
+    required-labels: [area-release-notes, automation]
     max: 5
   add-comment:
     max: 20
