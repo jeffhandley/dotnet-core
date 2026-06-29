@@ -1,0 +1,103 @@
+{
+  "$schema": "./schemas/components-schema.json",
+  "version": 1,
+  "components": [
+    {
+      "id": "runtime",
+      "title": ".NET Runtime",
+      "repos": ["dotnet/runtime"],
+      "areas": [
+        "area-GC-coreclr",
+        "area-JIT-coreclr",
+        "area-VM-coreclr",
+        "area-CodeGen-coreclr",
+        "area-Threading-coreclr",
+        "area-Diagnostics-coreclr",
+        "area-Tracing-coreclr"
+      ],
+      "content_dir": "release-notes/{milestone}/runtime"
+    },
+    {
+      "id": "libraries",
+      "title": "Libraries",
+      "repos": ["dotnet/runtime"],
+      "areas": [
+        "area-System.*",
+        "area-Microsoft.Extensions.*",
+        "area-Meta",
+        "area-Serialization"
+      ],
+      "content_dir": "release-notes/{milestone}/libraries"
+    },
+    {
+      "id": "sdk",
+      "title": "SDK & Tooling",
+      "repos": [
+        "dotnet/sdk",
+        "dotnet/installer",
+        "dotnet/templating",
+        "dotnet/msbuild",
+        "NuGet/NuGet.Client"
+      ],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/sdk"
+    },
+    {
+      "id": "csharp",
+      "title": "C#",
+      "repos": ["dotnet/roslyn"],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/csharp"
+    },
+    {
+      "id": "fsharp",
+      "title": "F#",
+      "repos": ["dotnet/fsharp"],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/fsharp"
+    },
+    {
+      "id": "aspnetcore",
+      "title": "ASP.NET Core",
+      "repos": ["dotnet/aspnetcore"],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/aspnetcore"
+    },
+    {
+      "id": "efcore",
+      "title": "Entity Framework Core",
+      "repos": ["dotnet/efcore"],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/efcore"
+    },
+    {
+      "id": "maui",
+      "title": ".NET MAUI",
+      "repos": ["dotnet/maui"],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/maui"
+    },
+    {
+      "id": "winforms",
+      "title": "Windows Forms",
+      "repos": ["dotnet/winforms"],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/winforms"
+    },
+    {
+      "id": "wpf",
+      "title": "WPF",
+      "repos": ["dotnet/wpf"],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/wpf"
+    },
+    {
+      "id": "general",
+      "title": "General",
+      "repos": [],
+      "areas": [],
+      "content_dir": "release-notes/{milestone}/general"
+    }
+  ],
+  "fallback_component": "general"
+}

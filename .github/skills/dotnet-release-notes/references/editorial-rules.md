@@ -42,15 +42,27 @@ Tone, attribution, and content guidelines for .NET release notes.
   - ✅ `## System.Text.Json offers more control over naming and ignore defaults`
   - ✅ `## Regex recognizes all Unicode newline sequences`
   - ❌ `## System.Text.Json gets more control over naming and ignore defaults`
-- Avoid anthropomorphic or club-like transition verbs such as `joins` when a more literal term is available. Prefer `moves to`, `is now in`, `adds support for`, or `supports`.
+- Avoid anthropomorphic or club-like transition verbs such as `joins` or `gains` when a more literal term is available — features and components do not have agency. Prefer `moves to`, `is now in`, `adds support for`, `supports`, `now includes`, `has been updated to`, or `is updated to`.
   - ✅ `## Zstandard moved to System.IO.Compression and ZIP reads validate CRC32`
+  - ✅ `The Virtualize<TItem> component now supports variable-height items for its AnchorMode parameter.`
+  - ✅ `Virtualize<TItem> has been updated to anchor scroll position correctly when items have varying heights.`
   - ❌ `## Zstandard joins System.IO.Compression and ZIP reads validate CRC32`
+  - ❌ `The Virtualize<TItem> component gains variable-height support for its AnchorMode parameter.`
 - Use the **established feature name** when one exists, especially for long-running preview features. If `release-notes/features.json` lists an `official_name`, use that in headings and prose. Treat aliases as match-only metadata, not as the default wording.
   - ✅ `## Unsafe Evolution remains a preview feature in .NET 11`
   - ✅ `## Unsafe Evolution adds clearer diagnostics in Preview 3`
   - ❌ `## Memory Safety v2 adds clearer diagnostics in Preview 3`
   - ❌ `## Unsafe code adds clearer diagnostics and annotations`
 - Keep headings concise — 3–8 words
+- **Backtick all code identifiers in headings and link text** — type names (`Virtualize<TItem>`), method names (`Random.NextInteger<T>`), directives (`#:ref`, `#:package`), namespaces (`System.Net.Http.Json`), and constants. Unticked code-like text in headings breaks the GitHub-compatible heading-slug algorithm that markdownlint MD051 enforces — e.g. `## File-based apps: #:ref directive` is rejected because the inline parser drops `#:ref`; `## File-based apps: \`#:ref\` directive` is accepted and slugs cleanly. The publish-step TOC regenerator can fix wrong anchors but cannot fix wrong headings.
+  - ✅ `## \`#:ref\` directive for file-based app dependencies`
+  - ✅ `## \`Virtualize<TItem>\` supports variable-height items in AnchorMode`
+  - ✅ `## \`System.Net.Http.Json\` added to implicit usings`
+  - ❌ `## File-based apps: #:ref directive for NuGet packages`
+  - ❌ `## Virtualize<TItem> supports variable-height items in AnchorMode`
+- **Always specify a language on fenced code blocks** — markdownlint MD040 blocks publish on any unlabeled ` ``` ` fence. Use the actual language for runnable snippets (`csharp`, `bash`, `json`, `xml`, `powershell`, `console`, `diff`), and use `text` for plain output, file trees, or pseudo-code where no language fits. This includes README.md tables of contents, runtime.md JIT codegen snippets, and every other fenced block — there is no exception.
+  - ✅ ` ```csharp `, ` ```bash `, ` ```json `, ` ```text `
+  - ❌ ` ``` ` (bare triple-backtick with no language)
 
 ## Benchmarks
 
@@ -63,11 +75,54 @@ Tone, attribution, and content guidelines for .NET release notes.
 
 - **Shared audience filter** — apply the 80/20 rule from `editorial-scoring`; don't redefine a competing threshold here. Keep narrower items only when the broader audience can still see why they matter.
 - **The two-sentence test** — if you can only write two sentences about a feature, it's probably an engineering fix, not a feature. Cut it. A community contribution or breaking change can lift a borderline entry, but "fixed an internal bug that happened to be visible" is not a feature.
+- **Bug-fix titles are bug fixes by default** — if the PR title starts with or contains `Fix`, `Fixed`, `Fixes`, `bugfix`, `correct`, `resolve`, or describes patching incorrect behavior, treat the change as a bug fix and route it to the **Bug fixes** section. Do **not** promote it into a top-level feature heading, do **not** dress it up with a feature-style heading (e.g. "`Component X` security fix" or "`Component X` reliability fix"), and do **not** include "fix" in the heading. Override this default only when **all three** of the following are true:
+  1. The change introduces a new public API surface, a new user-visible option, or a new default behavior — not just corrected existing behavior.
+  2. A typical upgrader needs to know about it (not just the small set of users who hit the original bug).
+  3. You can write more than two sentences of meaningful guidance — what to do with it, when to use it, what changes for the reader.
+  If any of those fail, the entry belongs in **Bug fixes**.
+- **Security and reliability work is usually a bug fix** — CVE-class fixes, input-validation hardening, and crash/hang/leak repairs almost always belong in the Bug fixes section. Lift them into a feature heading only when the work *also* introduces a new public option or a new default behavior the reader should know about.
 - **Headlines should convey value** — a heading like "GC regions on macOS" doesn't tell the reader whether this is good or bad. Prefer headings that hint at the benefit: "GC regions enabled on macOS" or "Server GC memory model now available on macOS."
 - **Product-boundary rule** — exclude higher-level IDE, editor, or design-time tooling features from product notes unless the release is specifically about that tooling surface. For example, a Razor editor code action should not be presented as an ASP.NET Core feature just because it is adjacent to the web stack.
 - **TODO for borderline entries** — when a feature might deserve inclusion but you lack data to justify it (benchmark numbers, real-world impact, user demand), keep the entry but add an HTML `<!-- TODO -->` comment asking for the missing information. This is better than silently including a vague claim or silently cutting something that might matter. The TODO should state what's needed and link to the PR where the data might live.
 - **Breaking changes are separate from hype** — a breaking change can be important even when it is not exciting. Keep the score honest; use `breaking_changes: true` to preserve a short callout instead of inflating the item into a headline feature.
 - **Clusters can be stronger than the parts** — several related low-score items can justify one section when together they tell a clear story. Keep the individual scores honest, then merge them into one writeup instead of emitting several weak mini-features. Good examples include a group of "Unsafe evolution" changes or multiple runtime entries prefixed with `[browser]`.
+- **Merge incremental work into a single "[Area] improvements" section** — when a milestone contains **three or more** small, related changes within the same long-running feature or subsystem (e.g. multiple JIT optimizations, multiple Runtime-async refinements, multiple Native AOT size wins, multiple GC tuning changes), emit **one** section titled `## <Area> improvements` (or `## <Feature> improvements`) instead of one heading per PR. Reserve standalone headings for items that genuinely warrant their own story (a new public API, a default behavior change, a major perf claim with benchmarks). Prefer the simpler `improvements` name over invented umbrella terms — readers scan for the area, not for clever phrasing.
+
+  **Choose the right shape for the cluster:**
+
+  - **Code-pattern clusters (JIT, codegen, runtime perf, GC tuning, AOT size, vectorization, intrinsics)** — these almost always benefit from **showing the pattern**. Use a brief intro paragraph, then either short prose-with-snippets paragraphs (one per change, with the PR link inline) or `###` sub-headings when each item warrants more than one paragraph. Include a small `csharp` (and occasionally `asm`) snippet that illustrates **what the developer would write or observe**, not the implementation detail. Prefer minimal, runnable-looking examples over excerpted PR descriptions.
+
+    Example (prose-with-snippets):
+
+    ```markdown
+    ## JIT improvements
+
+    Several JIT optimizations landed this preview that benefit normal C# without any source changes.
+
+    Common patterns like multi-target `switch` expressions now fold into simpler branchless checks ([dotnet/runtime #124567](...)), index-from-end access can drop more redundant bounds checks ([dotnet/runtime #124571](...)), and `uint` → `float`/`double` casts are faster on pre-AVX-512 x86 hardware ([dotnet/runtime #124114](...)).
+
+    ```csharp
+    bool isSmall = x is 0 or 1 or 2 or 3 or 4;
+    int tail = values[^1] + values[^2];
+    double d = someUint;
+    ```
+    ```
+
+    Use `###` sub-headings (as in past `## JIT optimizations` sections) when individual items merit a paragraph of explanation plus a code sample — for example, an inlining improvement with a before/after pattern, or a bounds-check elimination that needs a few lines of C# to make the pattern recognizable.
+
+  - **Behavioral / library clusters (Runtime-async refinements, AsyncLocal flow, EventSource additions, etc.)** — a bullet list is fine when each item is a small behavior tweak without a meaningful code pattern to show. One bullet per PR with a one-line summary and the linked PR reference.
+
+    ```markdown
+    ## Runtime-async improvements
+
+    Several refinements landed this preview that reduce overhead and improve diagnostics for runtime-async:
+
+    - Lower suspend/resume overhead on the common path ([dotnet/runtime #12345](...))
+    - `AsyncLocal<T>` values are now preserved across runtime-async awaits ([dotnet/runtime #12346](...))
+    - `EventSource` tracing now reports runtime-async transitions ([dotnet/runtime #12347](...))
+    ```
+
+  The threshold is **three or more** related items. Two related items can stay as two short adjacent sections if each tells a meaningful story on its own; collapse them only when both would otherwise be two-sentence stubs. When in doubt for code-pattern clusters, look at the past two milestones' `runtime.md` for the established shape and match it.
 
 ## Feature ordering
 
@@ -93,17 +148,14 @@ Thank you [@username](https://github.com/username) for this contribution!
 
 At the bottom of each component's notes, list ALL external contributors — not just those with documented features. Any community contributor with **one or more merged PRs** in the milestone should get a mention exactly once in the **Community contributors** section, even if none of their work was promoted into a feature writeup. Use the `community-contribution` label as a strong signal, but do not rely on it exclusively if the merged PR history shows a clear external contribution.
 
-**Vet the list** — the `community-contribution` label is sometimes wrong. Exclude usernames containing `-msft`, `-microsoft`, or other Microsoft suffixes. Also exclude bot/automation accounts such as `Copilot`, `dependabot`, `github-actions`, and any account whose name ends in `[bot]` — these aren't community contributors and their profile URLs often don't resolve (e.g. `https://github.com/Copilot` returns 404). When in doubt about whether someone is a Microsoft employee, leave them out of the community list.
-
-**Scope `dotnet/aspnetcore` links to the milestone.** That repo tags every PR with a release milestone (e.g. `11.0-preview4`), so the contributor link should append `+milestone%3A<slug>` to limit it to this milestone's contributions. Look up the exact slug with `gh pr view <pr> --repo dotnet/aspnetcore --json milestone`. Most other source repos don't apply milestones consistently — for those, omit the filter and link to the author's merged PRs without scope.
+**Vet the list** — the `community-contribution` label is sometimes wrong. Exclude usernames containing `-msft`, `-microsoft`, or other Microsoft suffixes. When in doubt about whether someone is a Microsoft employee, leave them out of the community list.
 
 ```markdown
 ## Community contributors
 
 Thank you contributors! ❤️
 
-- [@username](https://github.com/dotnet/aspnetcore/pulls?q=is%3Apr+is%3Amerged+author%3Ausername+milestone%3A<slug>)
-- [@username](https://github.com/<other-owner>/<other-repo>/pulls?q=is%3Apr+is%3Amerged+author%3Ausername)
+- [@username](https://github.com/<owner>/<repo>/pulls?q=is%3Apr+is%3Amerged+author%3Ausername)
 ```
 
 ## Bug fixes section

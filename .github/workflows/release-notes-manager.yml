@@ -1,0 +1,152 @@
+name: Release Notes Manager
+
+# Orchestration only: discover the in-scope release targets and produce one
+# Release Notes Producer run per FEATURE target. Deterministic discovery (no
+# agent), so this is a plain workflow. The producer is invoked as a reusable
+# workflow (workflow_call) so it runs in this run's context and inherits the
+# manager's actor, satisfying the producer's gh-aw activation role check.
+
+on:
+  schedule:
+    - cron: "29 15 * * *" # daily discovery + produce, ~08:29 PT
+    - cron: "47 * * * *" # hourly reactive sweep for review feedback
+  workflow_dispatch:
+    inputs:
+      milestone:
+        description: "Optional milestone override for feature targets (e.g. rc1, ga). Empty = auto-derive."
+        required: false
+        type: string
+      dry_run:
+        description: "Compute and print targets without dispatching producers."
+        required: false
+        type: boolean
+        default: false
+      reactive:
+        description: "Run the reactive feedback sweep instead of discovery/produce."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-notes-manager
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Discover targets
+    if: ${{ !github.event.repository.fork || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.discover.outputs.targets }}
+      feature_targets: ${{ steps.discover.outputs.feature_targets }}
+      feature_count: ${{ steps.discover.outputs.feature_count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Compute in-scope targets
+        id: discover
+        env:
+          MILESTONE: ${{ inputs.milestone }}
+        run: |
+          set -euo pipefail
+          targets="$(bash .github/scripts/release-notes-discover.sh)"
+          feature_targets="$(jq -c '[.[] | select(.mode == "feature")]' <<<"$targets")"
+          feature_count="$(jq 'length' <<<"$feature_targets")"
+          echo "Discovered ${feature_count} feature target(s):"
+          jq '.' <<<"$feature_targets"
+          {
+            echo "targets<<__EOF__"; jq -c '.' <<<"$targets"; echo "__EOF__"
+            echo "feature_targets<<__EOF__"; jq -c '.' <<<"$feature_targets"; echo "__EOF__"
+            echo "feature_count=${feature_count}"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "## Discovered ${feature_count} feature target(s)"
+            echo '```json'; jq '.' <<<"$feature_targets"; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  produce:
+    name: Produce release notes
+    needs: discover
+    if: ${{ github.event.schedule != '47 * * * *' && !inputs.reactive && needs.discover.outputs.feature_count != '0' && !inputs.dry_run }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      packages: read
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        target: ${{ fromJSON(needs.discover.outputs.feature_targets) }}
+    # Call the producer as a reusable workflow so it runs in this run's context
+    # and inherits the manager's (human/schedule) actor, satisfying the
+    # producer's gh-aw role check. (A GITHUB_TOKEN workflow_dispatch would run as
+    # github-actions[bot], which has no repo role and fails activation.)
+    uses: ./.github/workflows/release-notes-producer.lock.yml
+    with:
+      target: ${{ toJSON(matrix.target) }}
+      milestone: ${{ inputs.milestone }}
+    secrets: inherit
+
+  # ---- Reactive path (hourly sweep of draft release-notes PRs) ---------------
+  # pull_request_review never fires for draft PRs, and issue_comment is too noisy
+  # (every comment in the repo). Instead poll: find draft feature release-notes
+  # PRs with human review feedback that has no :eyes: marker yet, mark it as seen,
+  # and fan out the producer so it incorporates the feedback.
+  reactive_sweep:
+    name: Sweep draft PRs for feedback
+    needs: discover
+    if: ${{ github.event.schedule == '47 * * * *' || inputs.reactive }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      feature_targets: ${{ steps.sweep.outputs.feature_targets }}
+      feature_count: ${{ steps.sweep.outputs.feature_count }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGETS: ${{ needs.discover.outputs.targets }}
+      SWEEP_MODE: feature
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Mark feedback and resolve PRs to targets
+        id: sweep
+        run: |
+          set -euo pipefail
+          heads="$(bash .github/scripts/release-notes-reactive-sweep.sh)"
+          feature_targets="$(jq -c --argjson t "$TARGETS" '
+            [ .[] as $h | $t[] | select(.mode == "feature")
+              | select(.base_branch == $h or ($h | startswith(.base_branch + "-"))) ] | unique' <<<"$heads")"
+          feature_count="$(jq 'length' <<<"$feature_targets")"
+          echo "Heads with feedback: $heads"
+          {
+            echo "feature_targets<<__EOF__"; printf '%s\n' "$feature_targets"; echo "__EOF__"
+            echo "feature_count=${feature_count}"
+          } >> "$GITHUB_OUTPUT"
+
+  reactive_feature:
+    name: Reactive produce (feature)
+    needs: reactive_sweep
+    if: ${{ needs.reactive_sweep.outputs.feature_count != '0' }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      packages: read
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        target: ${{ fromJSON(needs.reactive_sweep.outputs.feature_targets) }}
+    uses: ./.github/workflows/release-notes-producer.lock.yml
+    with:
+      target: ${{ toJSON(matrix.target) }}
+    secrets: inherit
+

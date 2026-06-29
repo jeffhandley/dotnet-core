@@ -74,7 +74,7 @@ writing stage to keep long-running features consistent across the release.
 - `repo` (`string`) — short repository name, for example `"runtime"`
 - `product` (`string`) — product slug, for example `"dotnet-runtime"`; absent for infra repos
 - `title` (`string`) — PR title; `""` if not available
-- `url` (`string`) — public GitHub PR URL; `""` if non-public
+- `url` (`string`) — public GitHub **PR** URL (the pull request that introduced `local_repo_commit`); `""` if non-public. This must be a `/pull/<n>` URL, never an `/issues/<n>` URL. **Never substitute an issue the PR closes or references** (e.g. a `Fixes #123` / `closingIssuesReferences` number) — that issue number and the PR number are different, and the entry must carry the PR. See the commit→PR invariant below.
 - `commit` (`string`) — key into top-level `commits{}` for the VMR (`dotnet/dotnet`) codeflow commit
 - `is_security` (`bool`) — `true` if this is a security change
 - `local_repo_commit` (`string`) — key into `commits{}` for the source repo commit (same as `id`)
@@ -89,6 +89,30 @@ writing stage to keep long-running features consistent across the release.
 The `product` field is derived from the repo-level [component mapping](component-mapping.md). Infra repos like `arcade` and `symreader` have no `product` field. The `repo` field always matches the VMR manifest path.
 
 The `commit` field is the VMR codeflow commit in `dotnet/dotnet` that synced this change. Multiple source PRs typically map to the same VMR commit (codeflow batches changes). The `url` field links to the source-repo PR — together these provide both the product view (commit) and the development view (url).
+
+### Commit → PR invariant (never link the issue)
+
+The **commit is the identity**; the **PR is derived from it**. The stable
+identity of every change is its source-repo commit (`id` / `local_repo_commit`,
+in `repo@shortcommit` form). The `url` is a *secondary* field derived from that
+commit, and it must point at the pull request that **introduced** the commit.
+
+A pull request and the issue it closes are **different numbers**. GitHub records
+`closingIssuesReferences` / `Fixes #N` links, and naively resolving a commit can
+surface that closed issue instead of the PR. The `url` must never be that issue.
+
+Authoritative way to resolve the PR from the recorded commit:
+
+```bash
+# Returns the PR(s) that contain a commit; take the merged one.
+gh api "repos/<org>/<repo>/commits/<full-sha>/pulls" \
+  --jq '.[] | select(.merged_at != null) | .html_url'
+```
+
+If an entry's `url` is an `/issues/<n>` link, or resolves to a PR whose merge
+commit does not equal `local_repo_commit`, it is wrong — replace it with the URL
+returned by the command above. See the **validation pass** in the
+[`generate-changes`](../../generate-changes/SKILL.md) skill.
 
 ## Commit entry fields (values in `commits{}`)
 
