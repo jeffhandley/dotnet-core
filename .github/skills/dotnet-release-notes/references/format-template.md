@@ -11,8 +11,8 @@ Standard document structure for .NET release notes markdown files.
 
 .NET <VERSION> <PREVIEW> includes new <Component> features & enhancements:
 
-- [Feature Name](#anchor)
-- [Feature Name](#anchor)
+<!-- toc -->
+<!-- tocstop -->
 
 ## Feature Name
 
@@ -83,7 +83,7 @@ Known component docs links:
 
 ## Section rules
 
-1. **TOC at top** — every feature gets a linked entry
+1. **TOC at top** — every feature gets a linked entry. **Do not hand-write the TOC.** Leave `<!-- toc -->` / `<!-- tocstop -->` markers in the file after the intro sentence; the workflow runs `markdown-toc -i FILE.md --maxdepth 2` to populate them from the `##` headings. This guarantees anchors match heading slugs and removes the entire class of TOC-drift bugs (anchor typos, orphaned entries after restructuring).
 2. **One paragraph of context** — what the feature does and why it matters in concrete terms, with PR/issue links; avoid inferred feelings or marketing-style claims
 3. **Code sample** — show the feature in use
 4. **Feature ordering** — highest customer impact first

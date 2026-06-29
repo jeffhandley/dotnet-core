@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jeffhandley/dotnet-core-release-notes/release-notes/schemas/components-schema.json",
+  "title": ".NET release-notes components manifest",
+  "description": "Defines the product components that the release-notes agentic workflow uses to partition features into per-component branches and editorial sections. This file describes the product surface (what readers see); it does not describe teams or org structure.",
+  "type": "object",
+  "required": ["version", "components", "fallback_component"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer",
+      "description": "Schema version of this file. Incremented when the component schema or semantics change in a backward-incompatible way.",
+      "minimum": 1
+    },
+    "components": {
+      "type": "array",
+      "description": "Ordered list of components. Order influences presentation in rolled-up views; classification is by id, not position.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "repos", "areas", "content_dir"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier. Used as the branch suffix and matrix key (e.g., 'runtime' produces 'release-notes/dotnet-11-preview-3-runtime'). Must be unique within this file and contain only lowercase letters, digits, and hyphens.",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable component name used in release-notes headings."
+          },
+          "repos": {
+            "type": "array",
+            "description": "Repositories whose PRs are deterministically assigned to this component. A feature whose primary PR comes from a listed repo is assigned to this component without LLM classification. May be empty for components with no canonical repo (e.g., the 'general' fallback).",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+            }
+          },
+          "areas": {
+            "type": "array",
+            "description": "Area labels (or glob-like patterns) used to refine repo-based assignment when a single repo serves multiple components. Patterns ending in '*' match any suffix. May be empty.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content_dir": {
+            "type": "string",
+            "description": "Directory where this component's editorial markdown lives. The token '{milestone}' is substituted with the active milestone path segment (e.g., '11.0/preview/preview3') at workflow time."
+          }
+        }
+      }
+    },
+    "fallback_component": {
+      "type": "string",
+      "description": "Id of the component that receives features which match no repo and no area. Must reference an id present in the components array. Intended to be a low-trust holding bucket reviewed manually before merge.",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    }
+  }
+}
