@@ -1,0 +1,116 @@
+name: Servicing Release Notes Manager
+
+# Orchestration only: discover the consolidated servicing target (all supported
+# GA channels with an undocumented latest patch) and produce one consolidated
+# servicing PR. Independent of the feature Release Notes Manager so vCurrent and
+# servicing run on their own schedules and reactive sweeps. The producer is
+# invoked as a reusable workflow (workflow_call) so it inherits the manager's
+# actor, satisfying the producer's gh-aw activation role check.
+
+on:
+  schedule:
+    - cron: "29 16 * * *" # daily discovery + produce, ~09:29 PT
+    - cron: "47 * * * *" # hourly reactive sweep for review feedback
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Compute and print the servicing target without producing."
+        required: false
+        type: boolean
+        default: false
+      reactive:
+        description: "Run the reactive feedback sweep instead of discovery/produce."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-notes-servicing-manager
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Discover servicing target
+    if: ${{ !github.event.repository.fork || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    outputs:
+      servicing_target: ${{ steps.discover.outputs.servicing_target }}
+      has_servicing: ${{ steps.discover.outputs.has_servicing }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Compute servicing target
+        id: discover
+        run: |
+          set -euo pipefail
+          targets="$(bash .github/scripts/release-notes-discover.sh)"
+          servicing_target="$(jq -c 'map(select(.mode == "servicing")) | .[0] // empty' <<<"$targets")"
+          if [ -n "$servicing_target" ]; then has_servicing=true; else has_servicing=false; fi
+          echo "servicing=${has_servicing}: ${servicing_target:-<none>}"
+          {
+            echo "servicing_target<<__EOF__"; printf '%s\n' "${servicing_target:-}"; echo "__EOF__"
+            echo "has_servicing=${has_servicing}"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "## Servicing target (has_servicing=${has_servicing})"
+            echo '```json'; printf '%s\n' "${servicing_target:-{}}" | jq '.'; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  produce_servicing:
+    name: Produce servicing release notes
+    needs: discover
+    if: ${{ github.event.schedule != '47 * * * *' && !inputs.reactive && needs.discover.outputs.has_servicing == 'true' && !inputs.dry_run }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      packages: read
+    uses: ./.github/workflows/release-notes-servicing-producer.lock.yml
+    with:
+      target: ${{ needs.discover.outputs.servicing_target }}
+    secrets: inherit
+
+  # ---- Reactive path (hourly sweep of the draft servicing PR) ----------------
+  reactive_sweep:
+    name: Sweep draft servicing PR for feedback
+    needs: discover
+    if: ${{ github.event.schedule == '47 * * * *' || inputs.reactive }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      has_servicing: ${{ steps.sweep.outputs.has_servicing }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SWEEP_MODE: servicing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Mark feedback on the servicing PR
+        id: sweep
+        run: |
+          set -euo pipefail
+          heads="$(bash .github/scripts/release-notes-reactive-sweep.sh)"
+          if jq -e 'index("release-notes/servicing")' <<<"$heads" >/dev/null; then has_servicing=true; else has_servicing=false; fi
+          echo "Heads with feedback: $heads"
+          echo "has_servicing=${has_servicing}" >> "$GITHUB_OUTPUT"
+
+  reactive_servicing:
+    name: Reactive produce (servicing)
+    needs: [discover, reactive_sweep]
+    if: ${{ needs.reactive_sweep.outputs.has_servicing == 'true' }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      packages: read
+    uses: ./.github/workflows/release-notes-servicing-producer.lock.yml
+    with:
+      target: ${{ needs.discover.outputs.servicing_target }}
+    secrets: inherit
