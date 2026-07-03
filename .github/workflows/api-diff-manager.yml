@@ -1,8 +1,11 @@
 name: API Diff Manager
 
 # Orchestration only: evaluate the dnceng NuGet feeds to discover the active,
-# not-yet-shipped release milestones and emit one target per milestone.
-# Deterministic discovery (no agent), so this is a plain workflow.
+# not-yet-shipped release milestones and produce one API Diff Producer run per
+# milestone. Deterministic discovery (no agent), so this is a plain workflow.
+# The producer is invoked as a reusable workflow (workflow_call) so it runs in
+# this run's context and inherits the manager's actor, satisfying the producer's
+# gh-aw activation role check.
 
 on:
   schedule:
@@ -57,3 +60,31 @@ jobs:
             echo "## Discovered ${count} API diff milestone(s)"
             echo '```json'; jq '.' <<<"$targets"; echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  produce:
+    name: Produce API diff
+    needs: discover
+    if: ${{ needs.discover.outputs.count != '0' && !inputs.dry_run }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      packages: read
+    strategy:
+      fail-fast: false
+      # Producers share one concurrency group ("gh-aw-<workflow>", cancel-in-progress
+      # false), so distinct targets serialize regardless of this value. Dispatch them
+      # one at a time so a queued target is never dropped by concurrency's
+      # pending-run-replacement rule.
+      max-parallel: 1
+      matrix:
+        target: ${{ fromJSON(needs.discover.outputs.targets) }}
+    # Call the producer as a reusable workflow so it runs in this run's context
+    # and inherits the manager's actor, satisfying the producer's gh-aw role
+    # check. (A GITHUB_TOKEN workflow_dispatch would run as github-actions[bot],
+    # which has no repo role and fails activation.)
+    uses: ./.github/workflows/api-diff-producer.lock.yml
+    with:
+      target: ${{ toJSON(matrix.target) }}
+    secrets: inherit
