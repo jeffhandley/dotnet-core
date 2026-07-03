@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"5f7f7a976d218c12d53032724f3a40e880fbf9ab32a42291821c370db744ed1a","body_hash":"0c2657188b49de78a7d2218e7893f221bd32df7da8702664ca4025e7523b465b","compiler_version":"v0.80.9","strict":true,"agent_id":"copilot","engine_versions":{"copilot":"1.0.63"}}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","COPILOT_PAT_0","COPILOT_PAT_1","COPILOT_PAT_2","COPILOT_PAT_3","COPILOT_PAT_4","COPILOT_PAT_5","COPILOT_PAT_6","COPILOT_PAT_7","COPILOT_PAT_8","COPILOT_PAT_9","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0","version":"v7.0.0"},{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"de0fac2e4500dabe0009e67214ff5f5447ce83dd"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"8c7d04ebf1ece56cd381446125da3e0f6896294a","version":"v0.80.9"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.27.7","digest":"sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7","digest":"sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.27.7","digest":"sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.27","digest":"sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.27@sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b","pinned_image":"ghcr.io/github/gh-aw-node@sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b"},{"image":"ghcr.io/github/github-mcp-server:v1.4.0","digest":"sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036","pinned_image":"ghcr.io/github/github-mcp-server:v1.4.0@sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036"}]}
+# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"9401355a17b4170ef91e0d6270fd90eb753f0ee19413eafd0da0b418cbe28b73","body_hash":"119ba0c40c6801d6f3a0d28de723c60c29acafcb4cd4e97d4e6f3b7b0cdcb637","compiler_version":"v0.80.9","strict":true,"agent_id":"copilot","engine_versions":{"copilot":"1.0.63"}}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","COPILOT_PAT_0","COPILOT_PAT_1","COPILOT_PAT_2","COPILOT_PAT_3","COPILOT_PAT_4","COPILOT_PAT_5","COPILOT_PAT_6","COPILOT_PAT_7","COPILOT_PAT_8","COPILOT_PAT_9","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0","version":"v7.0.0"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"8c7d04ebf1ece56cd381446125da3e0f6896294a","version":"v0.80.9"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.27.7","digest":"sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7","digest":"sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6"},{"image":"ghcr.io/github/gh-aw-firewall/cli-proxy:0.27.7","digest":"sha256:4757f198a3fa20f88bdbe70be7ae1a05f127d9c0a9e96a5d6460ef40c08fc83d","pinned_image":"ghcr.io/github/gh-aw-firewall/cli-proxy:0.27.7@sha256:4757f198a3fa20f88bdbe70be7ae1a05f127d9c0a9e96a5d6460ef40c08fc83d"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.27.7","digest":"sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.27","digest":"sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.27@sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b","pinned_image":"ghcr.io/github/gh-aw-node@sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b"},{"image":"ghcr.io/github/github-mcp-server:v1.4.0","digest":"sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036","pinned_image":"ghcr.io/github/github-mcp-server:v1.4.0@sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036"}]}
 # This file was automatically generated by gh-aw (v0.80.9). DO NOT EDIT. To debug this workflow, load the skill at https://github.com/github/gh-aw/blob/main/debug.md
 #
 #    ___                   _   _      
@@ -49,10 +49,8 @@
 #   - actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
 #   - actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
 #   - actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-#   - actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # de0fac2e4500dabe0009e67214ff5f5447ce83dd
 #   - actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
 #   - actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-#   - actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0 (source v9)
 #   - actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
 #   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
 #   - github/gh-aw-actions/setup@8c7d04ebf1ece56cd381446125da3e0f6896294a # v0.80.9
@@ -60,6 +58,7 @@
 # Container images used:
 #   - ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c
 #   - ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6
+#   - ghcr.io/github/gh-aw-firewall/cli-proxy:0.27.7@sha256:4757f198a3fa20f88bdbe70be7ae1a05f127d9c0a9e96a5d6460ef40c08fc83d
 #   - ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96
 #   - ghcr.io/github/gh-aw-mcpg:v0.3.27@sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7
 #   - ghcr.io/github/gh-aw-node@sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b
@@ -175,7 +174,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Write API Diff"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/api-diff-producer.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.60"
+          GH_AW_INFO_VERSION: "1.0.63"
           GH_AW_INFO_AWF_VERSION: "v0.27.7"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
@@ -204,8 +203,8 @@ jobs:
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_INFO_ENGINE_NAME: "GitHub Copilot CLI"
           GH_AW_INFO_MODEL: ${{ vars.GH_AW_MODEL_AGENT_COPILOT || vars.GH_AW_DEFAULT_MODEL_COPILOT || 'claude-sonnet-4.6' }}
-          GH_AW_INFO_VERSION: "1.0.60"
-          GH_AW_INFO_AGENT_VERSION: "1.0.60"
+          GH_AW_INFO_VERSION: "1.0.63"
+          GH_AW_INFO_AGENT_VERSION: "1.0.63"
           GH_AW_INFO_CLI_VERSION: "v0.80.9"
           GH_AW_INFO_WORKFLOW_NAME: "Write API Diff"
           GH_AW_INFO_EXPERIMENTAL: "false"
@@ -514,7 +513,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Write API Diff"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/api-diff-producer.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.60"
+          GH_AW_INFO_VERSION: "1.0.63"
           GH_AW_INFO_AWF_VERSION: "v0.27.7"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
@@ -536,16 +535,28 @@ jobs:
         run: bash "${RUNNER_TEMP}/gh-aw/actions/configure_gh_for_ghe.sh"
         env:
           GH_TOKEN: ${{ github.token }}
-      - env:
-          GH_RUN_ID: ${{ github.run_id }}
-          GH_TOKEN: ${{ github.token }}
-          TARGET: ${{ inputs.target }}
-        name: Set up target context and generate the API diff
+      - name: Start DIFC Proxy
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          DIFC_PROXY_POLICY: '{"allow-only":{"disapproval-reactions":["THUMBS_DOWN","CONFUSED"],"endorsement-reactions":["THUMBS_UP","HEART"],"min-integrity":"approved","repos":"all"}}'
+          DIFC_PROXY_IMAGE: 'ghcr.io/github/gh-aw-mcpg:v0.3.27'
+        run: |
+          bash "${RUNNER_TEMP}/gh-aw/actions/start_difc_proxy.sh"
+      - name: Set up target context and generate the API diff
         run: |
           set -euo pipefail
           bash .github/scripts/api-diff-producer-setup.sh
+        env:
+          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
+          GH_REPO: ${{ github.repository }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+          TARGET: ${{ inputs.target }}
         shell: bash
-
       - name: Configure Git credentials
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -572,16 +583,17 @@ jobs:
           GH_HOST: github.com
       - name: Install AWF binary
         run: bash "${RUNNER_TEMP}/gh-aw/actions/install_awf_binary.sh" v0.27.7
-      - name: Determine automatic lockdown mode for GitHub MCP Server
-        id: determine-automatic-lockdown
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0 (source v9)
+      - name: Parse integrity filter lists
+        id: parse-guard-vars
         env:
-          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
-          GH_AW_GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN }}
-        with:
-          script: |
-            const determineAutomaticLockdown = require('${{ runner.temp }}/gh-aw/actions/determine_automatic_lockdown.cjs');
-            await determineAutomaticLockdown(github, context, core);
+          GH_AW_BLOCKED_USERS_VAR: ${{ vars.GH_AW_GITHUB_BLOCKED_USERS || '' }}
+          GH_AW_TRUSTED_USERS_VAR: ${{ vars.GH_AW_GITHUB_TRUSTED_USERS || '' }}
+          GH_AW_APPROVAL_LABELS_VAR: ${{ vars.GH_AW_GITHUB_APPROVAL_LABELS || '' }}
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/parse_guard_list.sh"
+      - name: Stop DIFC Proxy
+        if: always()
+        continue-on-error: true
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/stop_difc_proxy.sh"
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -603,7 +615,7 @@ jobs:
           GH_AW_SKILL_DIR: ".github/skills"
         run: bash "${RUNNER_TEMP}/gh-aw/actions/restore_inline_skills.sh"
       - name: Download container images
-        run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6 ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96 ghcr.io/github/gh-aw-mcpg:v0.3.27@sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7 ghcr.io/github/gh-aw-node@sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b ghcr.io/github/github-mcp-server:v1.4.0@sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6 ghcr.io/github/gh-aw-firewall/cli-proxy:0.27.7@sha256:4757f198a3fa20f88bdbe70be7ae1a05f127d9c0a9e96a5d6460ef40c08fc83d ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96 ghcr.io/github/gh-aw-mcpg:v0.3.27@sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7 ghcr.io/github/gh-aw-node@sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b ghcr.io/github/github-mcp-server:v1.4.0@sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036
       - name: Generate Safe Outputs Config
         run: |
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
@@ -733,8 +745,6 @@ jobs:
           GH_AW_SAFE_OUTPUTS: ${{ steps.set-runtime-paths.outputs.GH_AW_SAFE_OUTPUTS }}
           GH_AW_SAFE_OUTPUTS_CONFIG_PATH: ${{ steps.set-runtime-paths.outputs.GH_AW_SAFE_OUTPUTS_CONFIG_PATH }}
           GH_AW_SAFE_OUTPUTS_TOOLS_PATH: ${{ steps.set-runtime-paths.outputs.GH_AW_SAFE_OUTPUTS_TOOLS_PATH }}
-          GITHUB_MCP_GUARD_MIN_INTEGRITY: ${{ steps.determine-automatic-lockdown.outputs.min_integrity }}
-          GITHUB_MCP_GUARD_REPOS: ${{ steps.determine-automatic-lockdown.outputs.repos }}
           GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -766,7 +776,7 @@ jobs:
           
           mkdir -p "$HOME/.copilot"
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_c70c556baaebe8bb_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_2627403bd4986149_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "github": {
@@ -780,8 +790,11 @@ jobs:
                 },
                 "guard-policies": {
                   "allow-only": {
-                    "min-integrity": "$GITHUB_MCP_GUARD_MIN_INTEGRITY",
-                    "repos": "$GITHUB_MCP_GUARD_REPOS"
+                    "approval-labels": ${{ steps.parse-guard-vars.outputs.approval_labels }},
+                    "blocked-users": ${{ steps.parse-guard-vars.outputs.blocked_users }},
+                    "min-integrity": "approved",
+                    "repos": "all",
+                    "trusted-users": ${{ steps.parse-guard-vars.outputs.trusted_users }}
                   }
                 }
               },
@@ -823,7 +836,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_c70c556baaebe8bb_EOF
+          GH_AW_MCP_CONFIG_2627403bd4986149_EOF
       - name: Mount MCP servers as CLIs
         id: mount-mcp-clis
         continue-on-error: true
@@ -845,6 +858,14 @@ jobs:
         id: pre_agent_audit
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/audit_pre_agent_workspace.sh"
+      - name: Start CLI Proxy
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          CLI_PROXY_POLICY: '{"allow-only":{"disapproval-reactions":["THUMBS_DOWN","CONFUSED"],"endorsement-reactions":["THUMBS_UP","HEART"],"min-integrity":"approved","repos":"all"}}'
+          CLI_PROXY_IMAGE: 'ghcr.io/github/gh-aw-mcpg:v0.3.27'
+        run: |
+          bash "${RUNNER_TEMP}/gh-aw/actions/start_cli_proxy.sh"
       - name: Execute GitHub Copilot CLI
         id: agentic_execution
         # Copilot CLI tool arguments (sorted):
@@ -955,6 +976,10 @@ jobs:
           GIT_COMMITTER_NAME: github-actions[bot]
           RUNNER_TEMP: ${{ runner.temp }}
           TRACEPARENT: ${{ env.GITHUB_AW_OTEL_TRACE_ID != '' && env.GITHUB_AW_OTEL_PARENT_SPAN_ID != '' && format('00-{0}-{1}-01', env.GITHUB_AW_OTEL_TRACE_ID, env.GITHUB_AW_OTEL_PARENT_SPAN_ID) || '' }}
+      - name: Stop CLI Proxy
+        if: always()
+        continue-on-error: true
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/stop_cli_proxy.sh"
       - name: Detect agent errors
         if: always()
         id: detect-agent-errors
@@ -1092,7 +1117,7 @@ jobs:
             echo '{"items":[]}' > /tmp/gh-aw/agent_output.json
           fi
       - name: Translate publish manifest to publish-items.json
-        run: "set -euo pipefail\nmanifest_dir=/tmp/gh-aw/agent/publish\nitems_file=/tmp/gh-aw/agent/publish-items.json\nmkdir -p /tmp/gh-aw/agent\necho '{\"items\":[]}' > \"$items_file\"\n\nif [ ! -d \"$manifest_dir\" ]; then\n  echo \"No publish manifest was written (nothing to publish)\"; exit 0\nfi\nshopt -s nullglob\nmanifests=(\"$manifest_dir\"/*.json)\nif [ ${#manifests[@]} -eq 0 ]; then\n  echo \"No publish manifest was written (nothing to publish)\"; exit 0\nfi\n\n# ---- Validate the agent's manifest against the host-authored target.json ----\n# The agent is instructed to echo several target.json fields verbatim; enforce that\n# here so a drifted or hallucinated manifest is rejected loudly instead of publishing\n# a PR onto the wrong branch / number / readiness or with a broken identity marker.\ntgt=/tmp/gh-aw/agent/target.json\nif [ ! -f \"$tgt\" ]; then\n  echo \"::error::target.json is missing but a publish manifest exists — refusing to publish\"; exit 1\nfi\nt_produce=$(jq -r '.produce' \"$tgt\")\nt_branch=$(jq -r '.target_branch' \"$tgt\")\nt_pr=$(jq -r '.existing_pr_number // \"\"' \"$tgt\")\nt_title=$(jq -r '.pr_title' \"$tgt\")\nt_marker=$(jq -r '.marker' \"$tgt\")\nt_cur=$(jq -r '.current_version' \"$tgt\")\nt_genat=$(jq -r '.generated_at' \"$tgt\")\nt_status=$(jq -r '.status' \"$tgt\")\nexpected_ready=false; [ \"$t_status\" = \"code-complete\" ] && expected_ready=true\nif [ \"$t_produce\" != \"true\" ]; then\n  echo \"::error::target.json has produce=$t_produce but the agent wrote a publish manifest — refusing to publish\"; exit 1\nfi\n\nvalidate_manifest() {\n  local branch=\"$1\" pr=\"$2\" title=\"$3\" body=\"$4\" ready=\"$5\"\n  [ \"$branch\" = \"$t_branch\" ] || { echo \"::error::manifest branch '$branch' != target_branch '$t_branch'\"; return 1; }\n  [ \"${pr:-}\" = \"$t_pr\" ]     || { echo \"::error::manifest pr_number '${pr:-}' != existing_pr_number '$t_pr'\"; return 1; }\n  [ \"$title\" = \"$t_title\" ]   || { echo \"::error::manifest title != pr_title\"; return 1; }\n  [ \"$ready\" = \"$expected_ready\" ] || { echo \"::error::manifest ready '$ready' != expected '$expected_ready' (status=$t_status)\"; return 1; }\n  case \"$body\" in *\"$t_marker\"*) ;; *) echo \"::error::manifest body is missing the identity marker\"; return 1 ;; esac\n  case \"$body\" in *\"$t_cur\"*)    ;; *) echo \"::error::manifest body is missing current_version\"; return 1 ;; esac\n  case \"$body\" in *\"$t_genat\"*)  ;; *) echo \"::error::manifest body is missing generated_at\"; return 1 ;; esac\n  return 0\n}\n\nappend_item() {\n  local tmp; tmp=$(mktemp)\n  jq --argjson item \"$1\" '.items += [$item]' \"$items_file\" > \"$tmp\"\n  mv \"$tmp\" \"$items_file\"\n}\n\nfor manifest in \"${manifests[@]}\"; do\n  branch=$(jq -r '.branch // empty' \"$manifest\")\n  title=$(jq -r '.title // empty' \"$manifest\")\n  body=$(jq -r '.body // empty' \"$manifest\")\n  comment=$(jq -r '.comment // empty' \"$manifest\")\n  ready=$(jq -r '.ready // false' \"$manifest\")\n  pr=$(jq -r '.pr_number // empty' \"$manifest\")\n\n  if [ -z \"$branch\" ]; then\n    echo \"Publish manifest is missing branch: $manifest\" >&2; exit 1\n  fi\n\n  if ! validate_manifest \"$branch\" \"$pr\" \"$title\" \"$body\" \"$ready\"; then\n    echo \"::error::Publish manifest failed validation against target.json: $manifest\" >&2; exit 1\n  fi\n\n  bundle_path=\"\"\n  remote_only=\"false\"\n  if git show-ref --verify --quiet \"refs/heads/$branch\"; then\n    safe_branch=$(printf '%s' \"$branch\" | tr '/[:space:]' '__')\n    bundle_path=\"/tmp/gh-aw/aw-${safe_branch}.bundle\"\n    rm -f \"$bundle_path\"\n    git bundle create \"$bundle_path\" \"refs/heads/$branch\"\n  elif git show-ref --verify --quiet \"refs/remotes/origin/$branch\"; then\n    remote_only=\"true\"\n  else\n    echo \"Publish manifest references unknown branch: $branch\" >&2; exit 1\n  fi\n\n  if [ -n \"$pr\" ]; then\n    # Update an existing marker PR. Emit the branch push whenever a local\n    # branch was staged (bundle_path set); push_branch below rebuilds the\n    # PR branch as origin/main + the api-diff delta and no-ops when the\n    # delta is empty. (A `git rev-list origin/$branch..$branch` check is\n    # unreliable here: the agent job's single-branch checkout has no\n    # origin/$branch ref, so it always reports 0 and the push is skipped,\n    # dropping feedback edits and build-advance report regenerations.)\n    if [ -n \"$bundle_path\" ]; then\n      append_item \"$(jq -cn --arg branch \"$branch\" --arg bundle_path \"$bundle_path\" \\\n        --arg message \"${comment:-Refreshed API diff.}\" --argjson pr \"$pr\" \\\n        '{type:\"push_to_pull_request_branch\", branch:$branch, bundle_path:$bundle_path, message:$message, pull_request_number:$pr}')\"\n    fi\n    if [ -n \"$body\" ] || [ -n \"$title\" ]; then\n      append_item \"$(jq -cn --arg title \"$title\" --arg body \"$body\" --argjson pr \"$pr\" --argjson ready \"$ready\" \\\n        '{type:\"update_pr_body\", title:$title, body:$body, pull_request_number:$pr, ready:$ready}')\"\n    fi\n    if [ -n \"$comment\" ]; then\n      append_item \"$(jq -cn --arg body \"$comment\" --argjson n \"$pr\" \\\n        '{type:\"add_comment\", body:$body, item_number:$n}')\"\n    fi\n  else\n    # Open a new draft PR.\n    if [ -z \"$title\" ] || [ -z \"$body\" ]; then\n      echo \"New PR manifest must include title and body: $manifest\" >&2; exit 1\n    fi\n    append_item \"$(jq -cn --arg branch \"$branch\" --arg bundle_path \"$bundle_path\" \\\n      --arg title \"$title\" --arg body \"$body\" --arg comment \"$comment\" \\\n      --argjson remote_only \"$remote_only\" --argjson ready \"$ready\" \\\n      '{type:\"create_pull_request\", branch:$branch, bundle_path:$bundle_path, title:$title, body:$body, comment:$comment, remote_only:$remote_only, ready:$ready}')\"\n  fi\ndone\n\necho \"publish-items.json:\"; jq '.' \"$items_file\"\n"
+        run: "set -euo pipefail\nmanifest_dir=/tmp/gh-aw/agent/publish\nitems_file=/tmp/gh-aw/agent/publish-items.json\nmkdir -p /tmp/gh-aw/agent\necho '{\"items\":[]}' > \"$items_file\"\n\nif [ ! -d \"$manifest_dir\" ]; then\n  echo \"No publish manifest was written (nothing to publish)\"; exit 0\nfi\nshopt -s nullglob\nmanifests=(\"$manifest_dir\"/*.json)\nif [ ${#manifests[@]} -eq 0 ]; then\n  echo \"No publish manifest was written (nothing to publish)\"; exit 0\nfi\n\n# ---- Validate the agent's manifest against the host-authored target.json ----\n# The agent is instructed to echo several target.json fields verbatim; enforce that\n# here so a drifted or hallucinated manifest is rejected loudly instead of publishing\n# a PR onto the wrong branch / number / readiness or with a broken identity marker.\ntgt=/tmp/gh-aw/agent/target.json\nif [ ! -f \"$tgt\" ]; then\n  echo \"::error::target.json is missing but a publish manifest exists — refusing to publish\"; exit 1\nfi\nt_produce=$(jq -r '.produce' \"$tgt\")\nt_branch=$(jq -r '.target_branch' \"$tgt\")\nt_pr=$(jq -r '.existing_pr_number // \"\"' \"$tgt\")\nt_title=$(jq -r '.pr_title' \"$tgt\")\nt_marker=$(jq -r '.marker' \"$tgt\")\nt_cur=$(jq -r '.current_version' \"$tgt\")\nt_genat=$(jq -r '.generated_at' \"$tgt\")\nt_status=$(jq -r '.status' \"$tgt\")\nexpected_ready=false; [ \"$t_status\" = \"code-complete\" ] && expected_ready=true\nif [ \"$t_produce\" != \"true\" ]; then\n  echo \"::error::target.json has produce=$t_produce but the agent wrote a publish manifest — refusing to publish\"; exit 1\nfi\n\nvalidate_manifest() {\n  local branch=\"$1\" pr=\"$2\" title=\"$3\" body=\"$4\" ready=\"$5\"\n  [ \"$branch\" = \"$t_branch\" ] || { echo \"::error::manifest branch '$branch' != target_branch '$t_branch'\"; return 1; }\n  [ \"${pr:-}\" = \"$t_pr\" ]     || { echo \"::error::manifest pr_number '${pr:-}' != existing_pr_number '$t_pr'\"; return 1; }\n  [ \"$title\" = \"$t_title\" ]   || { echo \"::error::manifest title != pr_title\"; return 1; }\n  [ \"$ready\" = \"$expected_ready\" ] || { echo \"::error::manifest ready '$ready' != expected '$expected_ready' (status=$t_status)\"; return 1; }\n  # The state lives in a fenced yaml block delimited by the visible\n  # `# api-diff-producer:state:begin`/`:end` comment lines; require both, matched as whole comment\n  # lines (leading indent / trailing CR tolerated, \"# \" prefix and \":state:begin\"/\":state:end\"\n  # suffix exact), so the next run can scope its reads to the block. A body missing them would\n  # parse to empty state and wedge the state machine into a re-produce loop.\n  printf '%s\\n' \"$body\" | awk '{t=$0;sub(/\\r$/,\"\",t);gsub(/^[[:space:]]+|[[:space:]]+$/,\"\",t)} t==\"# api-diff-producer:state:begin\"{f=1} END{exit !f}' || { echo \"::error::manifest body is missing the '# api-diff-producer:state:begin' marker line\"; return 1; }\n  printf '%s\\n' \"$body\" | awk '{t=$0;sub(/\\r$/,\"\",t);gsub(/^[[:space:]]+|[[:space:]]+$/,\"\",t)} t==\"# api-diff-producer:state:end\"{f=1} END{exit !f}' || { echo \"::error::manifest body is missing the '# api-diff-producer:state:end' marker line\"; return 1; }\n  # Extract each field the same way the next run's setup script does -- anchored to line\n  # start, tolerating an optional leading markdown list/quote marker and quotes, then\n  # comparing the VALUE literally -- and, crucially, scoped to WITHIN the state block (the\n  # LAST begin..end range, since the body ends with it). The extractor scopes to that block so\n  # human prose above it cannot shadow the machine values; this guard scopes the same way so\n  # anything it admits parses identically on the next run. A literal compare (not a\n  # value-derived grep) avoids version dots / timestamp colons matching wrong content.\n  blk=$(printf '%s' \"$body\" | awk '{t=$0;sub(/\\r$/,\"\",t);gsub(/^[[:space:]]+|[[:space:]]+$/,\"\",t)} t==\"# api-diff-producer:state:begin\"{inb=1;buf=$0 ORS;next} inb{buf=buf $0 ORS; if(t==\"# api-diff-producer:state:end\"){inb=0;last=buf}} END{if(inb)last=buf; printf \"%s\", last}')\n  mf_field() { sed -n \"s/^[[:space:]]*[-*+>]*[[:space:]]*$1:[[:space:]]*//p\" | head -1 | tr -d '\"'\\''\\r' | sed 's/[[:space:]]*#.*$//; s/[[:space:]]*$//'; }\n  [ \"$(printf '%s\\n' \"$blk\" | mf_field current-version)\" = \"$t_cur\" ] || { echo \"::error::manifest current-version != target.json '$t_cur'\"; return 1; }\n  [ \"$(printf '%s\\n' \"$blk\" | mf_field generated-at)\" = \"$t_genat\" ] || { echo \"::error::manifest generated-at != target.json '$t_genat'\"; return 1; }\n  # The marker is a whole yaml-comment line (\"# <marker>\"); match it exactly (CR- and\n  # indentation-tolerant) with the same jq matcher the setup step uses for has_marker.\n  [ \"$(jq -rn --arg b \"$body\" --arg m \"$t_marker\" '($b | gsub(\"\\r\";\"\") | split(\"\\n\") | any(gsub(\"^[ \\t]+|[ \\t]+$\";\"\") == \"# \" + $m))')\" = \"true\" ] || { echo \"::error::manifest body is missing the identity marker '$t_marker'\"; return 1; }\n  return 0\n}\n\nappend_item() {\n  local tmp; tmp=$(mktemp)\n  jq --argjson item \"$1\" '.items += [$item]' \"$items_file\" > \"$tmp\"\n  mv \"$tmp\" \"$items_file\"\n}\n\nfor manifest in \"${manifests[@]}\"; do\n  branch=$(jq -r '.branch // empty' \"$manifest\")\n  title=$(jq -r '.title // empty' \"$manifest\")\n  body=$(jq -r '.body // empty' \"$manifest\")\n  comment=$(jq -r '.comment // empty' \"$manifest\")\n  ready=$(jq -r '.ready // false' \"$manifest\")\n  pr=$(jq -r '.pr_number // empty' \"$manifest\")\n\n  if [ -z \"$branch\" ]; then\n    echo \"Publish manifest is missing branch: $manifest\" >&2; exit 1\n  fi\n\n  if ! validate_manifest \"$branch\" \"$pr\" \"$title\" \"$body\" \"$ready\"; then\n    echo \"::error::Publish manifest failed validation against target.json: $manifest\" >&2; exit 1\n  fi\n\n  bundle_path=\"\"\n  remote_only=\"false\"\n  if git show-ref --verify --quiet \"refs/heads/$branch\"; then\n    safe_branch=$(printf '%s' \"$branch\" | tr '/[:space:]' '__')\n    bundle_path=\"/tmp/gh-aw/aw-${safe_branch}.bundle\"\n    rm -f \"$bundle_path\"\n    git bundle create \"$bundle_path\" \"refs/heads/$branch\"\n  elif git show-ref --verify --quiet \"refs/remotes/origin/$branch\"; then\n    remote_only=\"true\"\n  else\n    echo \"Publish manifest references unknown branch: $branch\" >&2; exit 1\n  fi\n\n  if [ -n \"$pr\" ]; then\n    # Update an existing marker PR. Emit the branch push whenever a local\n    # branch was staged (bundle_path set); push_branch below rebuilds the\n    # PR branch as origin/main + the api-diff delta and no-ops when the\n    # delta is empty. (A `git rev-list origin/$branch..$branch` check is\n    # unreliable here: the agent job's single-branch checkout has no\n    # origin/$branch ref, so it always reports 0 and the push is skipped,\n    # dropping feedback edits and build-advance report regenerations.)\n    if [ -n \"$bundle_path\" ]; then\n      append_item \"$(jq -cn --arg branch \"$branch\" --arg bundle_path \"$bundle_path\" \\\n        --arg message \"${comment:-Refreshed API diff.}\" --argjson pr \"$pr\" \\\n        '{type:\"push_to_pull_request_branch\", branch:$branch, bundle_path:$bundle_path, message:$message, pull_request_number:$pr}')\"\n    fi\n    if [ -n \"$body\" ] || [ -n \"$title\" ]; then\n      append_item \"$(jq -cn --arg title \"$title\" --arg body \"$body\" --argjson pr \"$pr\" --argjson ready \"$ready\" \\\n        '{type:\"update_pr_body\", title:$title, body:$body, pull_request_number:$pr, ready:$ready}')\"\n    fi\n    if [ -n \"$comment\" ]; then\n      append_item \"$(jq -cn --arg body \"$comment\" --argjson n \"$pr\" \\\n        '{type:\"add_comment\", body:$body, item_number:$n}')\"\n    fi\n  else\n    # Open a new draft PR.\n    if [ -z \"$title\" ] || [ -z \"$body\" ]; then\n      echo \"New PR manifest must include title and body: $manifest\" >&2; exit 1\n    fi\n    append_item \"$(jq -cn --arg branch \"$branch\" --arg bundle_path \"$bundle_path\" \\\n      --arg title \"$title\" --arg body \"$body\" --arg comment \"$comment\" \\\n      --argjson remote_only \"$remote_only\" --argjson ready \"$ready\" \\\n      '{type:\"create_pull_request\", branch:$branch, bundle_path:$bundle_path, title:$title, body:$body, comment:$comment, remote_only:$remote_only, ready:$ready}')\"\n  fi\ndone\n\necho \"publish-items.json:\"; jq '.' \"$items_file\"\n"
 
       - name: Upload agent artifacts
         if: always()
@@ -1105,6 +1130,8 @@ jobs:
             /tmp/gh-aw/sandbox/agent/logs/
             /tmp/gh-aw/redacted-urls.log
             /tmp/gh-aw/mcp-logs/
+            /tmp/gh-aw/proxy-logs/
+            !/tmp/gh-aw/proxy-logs/proxy-tls/
             /tmp/gh-aw/agent_usage.json
             /tmp/gh-aw/agent-stdio.log
             /tmp/gh-aw/pre-agent-audit.txt
@@ -1424,7 +1451,7 @@ jobs:
           rm -rf /tmp/gh-aw/sandbox/firewall/logs
           rm -rf /tmp/gh-aw/sandbox/firewall/audit
       - name: Download container images
-        run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6 ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6 ghcr.io/github/gh-aw-firewall/cli-proxy:0.27.7@sha256:4757f198a3fa20f88bdbe70be7ae1a05f127d9c0a9e96a5d6460ef40c08fc83d ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96
       - name: Check if detection needed
         id: detection_guard
         if: always()
@@ -1710,7 +1737,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Write API Diff"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/api-diff-producer.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.60"
+          GH_AW_INFO_VERSION: "1.0.63"
           GH_AW_INFO_AWF_VERSION: "v0.27.7"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
@@ -1750,7 +1777,7 @@ jobs:
           GH_HOST="${GH_HOST#http://}"
           echo "GH_HOST=${GH_HOST}" >> "$GITHUB_ENV"
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: true
@@ -1836,7 +1863,7 @@ jobs:
             # expected folders plus the two global ApiDiff*ToExclude.txt files. Scope to
             # release-notes/ so unrelated files inherited from main are never considered
             # (they always come from origin/main below); reject any other release-notes file.
-            allow='^release-notes/[0-9]+\.[0-9]+/(preview/[^/]+|[0-9]+\.[0-9]+\.0)/api-diff/.*\.md$|^release-notes/ApiDiff(Attributes|Assemblies)ToExclude\.txt$'
+            allow='^release-notes/[0-9]+\.[0-9]+/(preview/[^/]+|[0-9]+\.[0-9]+\.0)/api-diff/(.*\.md|ApiDiffAttributesToExclude\.txt)$|^release-notes/ApiDiff(Attributes|Assemblies)ToExclude\.txt$'
             files=$(git diff --name-only origin/main "refs/remotes/aw-bundle/$branch" -- release-notes/ || true)
             if [ -z "$files" ]; then
               echo "::notice::$branch has no changes vs origin/main; nothing to push"; return 0

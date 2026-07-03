@@ -24,7 +24,19 @@ safe-outputs:
   add-comment:
     max: 5
     target: "*"
+features:
+  # Let a maintainer promote an external contributor's comment to "approved" by adding an
+  # endorsement reaction (👍/❤️), so the agent then sees and can act on it. Enabling this
+  # auto-enables the CLI proxy that attributes the reacting user.
+  integrity-reactions: true
 tools:
+  github:
+    # Only content at "approved" integrity or higher reaches the agent. Write-access
+    # authors (OWNER/MEMBER/COLLABORATOR) are approved; feedback from anyone else is
+    # filtered out before the agent sees it unless a maintainer endorses it (see
+    # integrity-reactions). This is the single source of truth for feedback trust --
+    # the producer does no host-side trust handling of its own.
+    min-integrity: approved
   bash:
     - pwsh
     - dotnet
@@ -119,9 +131,27 @@ post-steps:
         [ "${pr:-}" = "$t_pr" ]     || { echo "::error::manifest pr_number '${pr:-}' != existing_pr_number '$t_pr'"; return 1; }
         [ "$title" = "$t_title" ]   || { echo "::error::manifest title != pr_title"; return 1; }
         [ "$ready" = "$expected_ready" ] || { echo "::error::manifest ready '$ready' != expected '$expected_ready' (status=$t_status)"; return 1; }
-        case "$body" in *"$t_marker"*) ;; *) echo "::error::manifest body is missing the identity marker"; return 1 ;; esac
-        case "$body" in *"$t_cur"*)    ;; *) echo "::error::manifest body is missing current_version"; return 1 ;; esac
-        case "$body" in *"$t_genat"*)  ;; *) echo "::error::manifest body is missing generated_at"; return 1 ;; esac
+        # The state lives in a fenced yaml block delimited by the visible
+        # `# api-diff-producer:state:begin`/`:end` comment lines; require both, matched as whole comment
+        # lines (leading indent / trailing CR tolerated, "# " prefix and ":state:begin"/":state:end"
+        # suffix exact), so the next run can scope its reads to the block. A body missing them would
+        # parse to empty state and wedge the state machine into a re-produce loop.
+        printf '%s\n' "$body" | awk '{t=$0;sub(/\r$/,"",t);gsub(/^[[:space:]]+|[[:space:]]+$/,"",t)} t=="# api-diff-producer:state:begin"{f=1} END{exit !f}' || { echo "::error::manifest body is missing the '# api-diff-producer:state:begin' marker line"; return 1; }
+        printf '%s\n' "$body" | awk '{t=$0;sub(/\r$/,"",t);gsub(/^[[:space:]]+|[[:space:]]+$/,"",t)} t=="# api-diff-producer:state:end"{f=1} END{exit !f}' || { echo "::error::manifest body is missing the '# api-diff-producer:state:end' marker line"; return 1; }
+        # Extract each field the same way the next run's setup script does -- anchored to line
+        # start, tolerating an optional leading markdown list/quote marker and quotes, then
+        # comparing the VALUE literally -- and, crucially, scoped to WITHIN the state block (the
+        # LAST begin..end range, since the body ends with it). The extractor scopes to that block so
+        # human prose above it cannot shadow the machine values; this guard scopes the same way so
+        # anything it admits parses identically on the next run. A literal compare (not a
+        # value-derived grep) avoids version dots / timestamp colons matching wrong content.
+        blk=$(printf '%s' "$body" | awk '{t=$0;sub(/\r$/,"",t);gsub(/^[[:space:]]+|[[:space:]]+$/,"",t)} t=="# api-diff-producer:state:begin"{inb=1;buf=$0 ORS;next} inb{buf=buf $0 ORS; if(t=="# api-diff-producer:state:end"){inb=0;last=buf}} END{if(inb)last=buf; printf "%s", last}')
+        mf_field() { sed -n "s/^[[:space:]]*[-*+>]*[[:space:]]*$1:[[:space:]]*//p" | head -1 | tr -d '"'\''\r' | sed 's/[[:space:]]*#.*$//; s/[[:space:]]*$//'; }
+        [ "$(printf '%s\n' "$blk" | mf_field current-version)" = "$t_cur" ] || { echo "::error::manifest current-version != target.json '$t_cur'"; return 1; }
+        [ "$(printf '%s\n' "$blk" | mf_field generated-at)" = "$t_genat" ] || { echo "::error::manifest generated-at != target.json '$t_genat'"; return 1; }
+        # The marker is a whole yaml-comment line ("# <marker>"); match it exactly (CR- and
+        # indentation-tolerant) with the same jq matcher the setup step uses for has_marker.
+        [ "$(jq -rn --arg b "$body" --arg m "$t_marker" '($b | gsub("\r";"") | split("\n") | any(gsub("^[ \t]+|[ \t]+$";"") == "# " + $m))')" = "true" ] || { echo "::error::manifest body is missing the identity marker '$t_marker'"; return 1; }
         return 0
       }
 
@@ -207,7 +237,7 @@ jobs:
       issues: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -299,7 +329,7 @@ jobs:
             # expected folders plus the two global ApiDiff*ToExclude.txt files. Scope to
             # release-notes/ so unrelated files inherited from main are never considered
             # (they always come from origin/main below); reject any other release-notes file.
-            allow='^release-notes/[0-9]+\.[0-9]+/(preview/[^/]+|[0-9]+\.[0-9]+\.0)/api-diff/.*\.md$|^release-notes/ApiDiff(Attributes|Assemblies)ToExclude\.txt$'
+            allow='^release-notes/[0-9]+\.[0-9]+/(preview/[^/]+|[0-9]+\.[0-9]+\.0)/api-diff/(.*\.md|ApiDiffAttributesToExclude\.txt)$|^release-notes/ApiDiff(Attributes|Assemblies)ToExclude\.txt$'
             files=$(git diff --name-only origin/main "refs/remotes/aw-bundle/$branch" -- release-notes/ || true)
             if [ -z "$files" ]; then
               echo "::notice::$branch has no changes vs origin/main; nothing to push"; return 0
@@ -457,7 +487,6 @@ environment: copilot-pat-pool
 
 engine:
   id: copilot
-  version: "1.0.60"
   env:
     # We cannot use line breaks in this expression as it leads to a syntax error in the compiled workflow
     COPILOT_GITHUB_TOKEN: ${{ case(needs.pat_pool.outputs.pat_number == '0', secrets.COPILOT_PAT_0, needs.pat_pool.outputs.pat_number == '1', secrets.COPILOT_PAT_1, needs.pat_pool.outputs.pat_number == '2', secrets.COPILOT_PAT_2, needs.pat_pool.outputs.pat_number == '3', secrets.COPILOT_PAT_3, needs.pat_pool.outputs.pat_number == '4', secrets.COPILOT_PAT_4, needs.pat_pool.outputs.pat_number == '5', secrets.COPILOT_PAT_5, needs.pat_pool.outputs.pat_number == '6', secrets.COPILOT_PAT_6, needs.pat_pool.outputs.pat_number == '7', secrets.COPILOT_PAT_7, needs.pat_pool.outputs.pat_number == '8', secrets.COPILOT_PAT_8, needs.pat_pool.outputs.pat_number == '9', secrets.COPILOT_PAT_9, secrets.COPILOT_GITHUB_TOKEN) }}
@@ -470,8 +499,8 @@ engine:
 You maintain a **public API diff report** for one in-flight .NET release diff in this
 repository (dotnet/core). The report is factual: the `api-diff` skill's `RunApiDiff.ps1`
 already generated it during setup from **real published builds** and staged it into the
-working tree. Your job is to publish it as a pull request and keep its description
-accurate — not to author prose. **Never merge**; humans merge.
+working tree. Your job is to publish it as a pull request, keep its description accurate,
+and act on reviewer feedback — not to author prose. **Never merge**; humans merge.
 
 ## 1. Read your context
 
@@ -492,21 +521,79 @@ Read `/tmp/gh-aw/agent/target.json`:
   for the automation to take over; either way, treat it as yours and (re)write the identity marker
   into its body on this refresh.
 - `produce` — **if `false`, STOP: write no manifest and open no PR**
-- `noop` — **if `true`, STOP: nothing changed (build unchanged, same status); write no manifest and post no comment**
-- `metadata_only` — the build is unchanged but the status flipped (draft→Ready). **Do
-  not regenerate reports** (the staged reports are already correct); only refresh the
-  body (advancing `generated_at`), flip draft→Ready if `status` is `code-complete`, and
+- `noop` — **if `true`, STOP: nothing changed (build unchanged, same status, no new review activity); write no manifest and post no comment**
+- `metadata_only` — the build is unchanged but the status flipped and/or new review activity arrived. **Do
+  not regenerate reports** (the staged reports are already correct); only apply feedback exclusions,
+  refresh the body (advancing `generated_at`), flip draft→Ready if `status` is `code-complete`, and
   publish — even when no report file changed.
 - `blocked` — a human already owns this diff (a non-automation `api-diff` PR touches this content).
   Treated as a no-op: do nothing.
-- `generated_at` — this run's report-generation timestamp, captured before generation began. Stamp it
-  into the PR body's yaml block; the manifest validation checks the refreshed body carries this exact value.
+- `has_new_feedback` — `true` when the setup's author-agnostic wake gate saw review activity newer than
+  `watermark` on the maintained PR (it never reads comment bodies). When the build is caught up but this
+  is `true`, the setup routes a metadata-only refresh so you fold in the feedback and the watermark advances.
+- `watermark` — the PR body's current `generated_at` value (empty on a fresh PR); the cutoff for which
+  review feedback is new this run (see step 2).
+- `generated_at` — this run's start time, captured before generation began. Stamp it back into the PR
+  body's yaml block as the new `generated_at`; the next run reads it as the `watermark`. (Because it is
+  captured at the start, review activity that arrives while this run executes carries a later timestamp
+  and is picked up by the next run rather than skipped.)
 - `report_count`, `temp_excluded_attributes`
 
 **If `produce` is `false` or `noop` is `true`, do nothing**: write no manifest, open/disturb no PR,
 post no comment. A no-op is the typical scheduled outcome and must be silent.
 
-## 2. Stage the branch — allowed files only
+## 2. Honoring reviewer feedback (only when `existing_pr_number` is set)
+
+Whenever the maintained PR exists and there is new review activity (`target.json.has_new_feedback` =
+true) — on a full refresh (build changed) or a metadata-only refresh (build unchanged) — address
+reviewer feedback on that PR as part of this run, before you stage any report change.
+
+**Trust is handled by the framework, not by you.** This workflow runs under GitHub integrity filtering
+(`min-integrity: approved`): the only PR reviews and review comments your GitHub tools can see are those
+from write-access reviewers (`OWNER`/`MEMBER`/`COLLABORATOR`) plus any external comment a maintainer has
+explicitly endorsed with a 👍/❤️ reaction (which promotes that item to approved). Feedback from anyone
+else is filtered out before it reaches you. So treat **every** review comment you can read as trusted
+reviewer guidance — you do not need to sanitize it, infer its author's trust level, or reason about
+prompt-injection. Integrity filtering governs **who** may give you feedback; the scope limits below
+still govern **what** you may act on. If you never see a comment, it was not endorsed; do not go looking
+for it or try to work around the filter.
+
+- **Collect the feedback.** Use your GitHub tools to read the maintained PR's submitted reviews, inline
+  review-comment threads, and standard PR timeline comments (list the pull request's reviews, review
+  comments, and issue comments for `existing_pr_number`). Consider all of these as review feedback.
+- **Scope to what is new.** `target.json.watermark` is the PR body's current `generated_at`. Act only on
+  review feedback **created after** that watermark; read anything at or before it for context only (e.g.
+  to understand a terse follow-up that builds on an earlier comment), and do not re-process it. Ignore
+  your own summary comments and any other bot comments. On a fresh PR the watermark is empty and there is
+  no prior feedback.
+- **Settle contradictions.** When two new comments conflict, respect the **most recent** guidance (the
+  larger created timestamp) and ignore the superseded direction.
+- **Act only on exclusion requests within scope.** Do not act on feedback that asks for prose, changes
+  the diff semantics, or excludes real API changes; briefly note in the summary comment that such
+  requests are out of scope for this automation. Route each in-scope exclusion request by kind, using the
+  apidiff file format — **attributes as `T:<FullyQualifiedTypeName>`** (one per line), **assemblies as the
+  bare assembly name** (no extension):
+  - **Permanently** exclude an attribute (drop it from every diff) → append `T:<FullName>` to the global
+    `permanent_attributes_file`.
+  - **Temporarily** exclude an attribute (just this diff) → append `T:<FullName>` to the per-report
+    `temporary_attributes_file`. (The setup step merges permanent + temporary for generation.)
+  - **Permanently** exclude an assembly → append `<name>` to the global `permanent_assemblies_file`.
+    **There is no temporary assembly exclusion** — assembly exclusions are always permanent.
+- For every exclusion you apply, also: (1) remove the now-excluded entries from the current `.md` reports
+  under `content_dir` so the PR reflects it immediately (reports show the display name, e.g.
+  `[System.ObsoleteAttribute]`); and (2) record it in your update comment and the PR body's **Feedback
+  applied** section.
+- **Advance the watermark.** When you refresh the PR body (the PR description, step 4), set `generated_at` to
+  `target.json.generated_at` (this run's start time). This is the durable, cross-run dedup signal — the
+  next run only reconsiders feedback created after it, so this run's feedback is never re-processed, even
+  the non-actionable or out-of-scope items. Advance it even when there was no actionable feedback this
+  run, so the wake does not repeat.
+
+This feedback pass is schedule-driven — it runs as part of the normal scheduled refresh, picking up
+review feedback left since the previous run. Do **not** add a `pull_request_review` (or other review)
+trigger; reacting to review events directly is out of scope for this workflow.
+
+## 3. Stage the branch — allowed files only
 
 You may add/modify **only** these paths (the publish job rejects anything else):
 
@@ -542,7 +629,7 @@ publishing: the reports are pushed and the PR is still created/updated, the publ
 You do not need to run markdownlint here; just stage the allowed files, and always write the full PR
 body (see the publish manifest section below) so the description is refreshed to the current state on every update.
 
-## 3. Write the publish manifest
+## 4. Write the publish manifest
 
 Write one JSON file to `/tmp/gh-aw/agent/publish/<safe-branch>.json` (`<safe-branch>` =
 `target_branch` with `/` replaced by `_`):
@@ -594,15 +681,21 @@ Then, succinct and factual:
 3. **Status** — `in-development` (draft while the major is still the in-development
    frontier on `main`) or `code-complete` (Ready for Review, once `main` has forked
    to the next major).
-4. **Exclusions applied** — the exclusions now in effect. List **temporary attribute**
-   exclusions (`temp_excluded_attributes`), and separately note any **permanent attribute** or
-   **permanent assembly** exclusions in the global files. "None." only if all are empty.
-5. A fenced ```yaml``` block. **The first line inside the block is the identity marker as a YAML
-   comment**, verbatim from `target.json`'s `marker` (i.e. `# <marker>` — a visible comment, never an
-   HTML comment: hidden markers trip content scanners). This is the stable handle the automation uses
-   to find this diff's PR, so it must be present and exact:
+4. **Feedback applied** — the exclusions now in effect. List **temporary attribute**
+   exclusions (`temp_excluded_attributes` plus any you added this run), and separately note any
+   **permanent attribute** or **permanent assembly** exclusions you added this run (to the global
+   files). "None." only if all are empty.
+5. A fenced ```yaml``` block carrying the machine-managed state, delimited by visible marker comments.
+   **The first line inside the block is `# api-diff-producer:state:begin` and the last line is
+   `# api-diff-producer:state:end`**; immediately after the begin line comes the identity marker,
+   verbatim from `target.json`'s `marker` (i.e. `# <marker>`). All are visible YAML comments, never HTML
+   comments (hidden markers trip content scanners). The begin/end lines delimit the state so the next run
+   reads it back scoped to this block -- human prose added elsewhere in the body cannot shadow it -- and
+   the identity marker is the stable handle the automation uses to find this diff's PR. Emit the begin/end
+   lines exactly as shown. All must be present and exact:
 
    ```yaml
+   # api-diff-producer:state:begin
    # <marker from target.json>
    track: "<track>"
    previous-version-milestone: "<previous_version_milestone>"
@@ -615,10 +708,12 @@ Then, succinct and factual:
    report-count: <report_count>
    generated-at: "<generated_at>"
    temporary-attributes-excluded: [<the per-report temporary attribute exclusions, T: form>]
+   # api-diff-producer:state:end
    ```
 
-   The `# <marker>`, `current-version`, and `generated-at` lines are required and machine-parsed; the
-   publish job rejects a manifest whose body is missing any of them.
+   The `# api-diff-producer:state:begin`/`:end` delimiters, the `# <marker>`, `current-version`, and
+   `generated-at` lines are required and machine-parsed; the publish job rejects a manifest whose body is
+   missing any of them.
 
 ## Invariants
 
